@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>115年奇美醫院第一次醫學臨床技能測驗(OSCE)試務進度儀表板</title>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#1e293b', 950: '#020617' }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.4s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #020617; color: #e2e8f0; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .print-hide { @media print { display: none; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- Configuration ---
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyMAkQlX4o6sjc0x8dp852YWxL4FuUyNs5taO7SORl4x_-Feig5vJOojAKio9_BTjYFGw/exec";
+        
+        // --- Icons ---
+        const Icons = {
+            Calendar: <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />,
+            CheckCircle2: <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM7.5 12.002l3.693 3.693L17.5 8.307" />, 
+            AlertCircle: <><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></>,
+            Printer: <><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" /></>,
+            LayoutDashboard: <><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></>,
+            ListTodo: <><rect x="3" y="5" width="6" height="6" rx="1" /><path d="m3 17 2 2 4-4" /><path d="M13 6h8" /><path d="M13 12h8" /><path d="M13 18h8" /></>,
+            FileInput: <><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4" /><path d="M14 2v6h6" /><path d="M2 15h10" /><path d="m9 18 3-3-3-3" /></>,
+            ChevronRight: <path d="m9 18 6-6-6-6" />,
+            Flag: <><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" x2="4" y1="22" y2="15" /></>,
+            Clock: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /><polyline points="12 6 12 12 16 14" /></>,
+            PieChart: <><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></>,
+            Send: <><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></>,
+            ArrowRight: <><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></>,
+            Timer: <><line x1="10" x2="14" y1="2" y2="2" /><line x1="12" x2="15" y1="14" y2="11" /><circle cx="12" cy="14" r="8" /></>,
+            Menu: <><line x1="4" x2="20" y1="12" y2="12" /><line x1="4" x2="20" y1="6" y2="6" /><line x1="4" x2="20" y1="18" y2="18" /></>,
+            X: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+            Cloud: <path d="M17.5 19c0-1.7-1.3-3-3-3h-1.1c-.1-2.9-2.4-5.2-5.3-5.2-2.5 0-4.6 1.8-5.2 4.2C1.1 15.5 0 16.9 0 18.5 0 21 2 23 4.5 23h13c1.7 0 3-1.3 3-3V19z" transform="translate(1,1)" />,
+            Save: <><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></>,
+            Users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>,
+            Copy: <><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></>,
+            Download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
+            UploadCloud: <><polyline points="16 16 12 12 8 16" /><line x1="12" x2="12" y1="12" y2="21" /><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" /><polyline points="16 16 12 12 8 16" /></>,
+            Check: <polyline points="20 6 9 17 4 12" />,
+            Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
+            User: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>
+        };
+
+        const Icon = ({ name, size = 24, className }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {Icons[name]}
+            </svg>
+        );
+
+        // --- Data ---
+        const MOCK_CURRENT_DATE = new Date('2026-01-20');
+        const STAGES = [
+            { id: 1, title: '第一階段：籌備與報名', period: '1月', returnDate: '115.1.28' },
+            { id: 2, title: '第二階段：試務安排', period: '2-4月', returnDate: '115.4.10' },
+            { id: 3, title: '第三階段：考場設置與執行', period: '4-5月', returnDate: '115.5.6' },
+            { id: 4, title: '第四階段：成績結算與檢討', period: '5-6月', returnDate: '115.6.18' },
+        ];
+        const initialTasks = [
+            { id: '1-1', stage: 1, seq: '(一)', taskName: '工作坊/訓練課程籌辦', dateStart: '2025-01-01', dateEnd: '2025-12-31', deadlineDisplay: '114.1~12', completed: false, type: 'task' },
+            { id: '1-2', stage: 1, seq: '(二)', taskName: '考官、標準化病人遴選', dateStart: '2025-08-01', dateEnd: '2025-12-31', deadlineDisplay: '114.8~12', completed: false, type: 'task' },
+            { id: '1-3', stage: 1, seq: '(三)', taskName: '寄交考官、SP認證相關文件', dateStart: '2025-11-30', dateEnd: '2025-11-30', deadlineDisplay: '114.11.30', completed: false, type: 'submission' },
+            { id: '1-4', stage: 1, seq: '(四)', taskName: '考試公告 (需檢附畫面)', dateStart: '2026-01-12', dateEnd: '2026-01-23', deadlineDisplay: '115.1.12~23', completed: false, type: 'milestone' },
+            { id: '1-5', stage: 1, seq: '(五)', taskName: '考生報名作業', dateStart: '2026-01-19', dateEnd: '2026-01-23', deadlineDisplay: '115.1.19~23', completed: false, type: 'task', note: '應屆與國內外畢業生' },
+            { id: '1-6', stage: 1, seq: '(六)', taskName: '寄交考試時程志願表', dateStart: '2026-01-28', dateEnd: '2026-01-28', deadlineDisplay: '115.1.28', completed: false, type: 'submission' },
+            { id: '1-7', stage: 1, seq: '(七)', taskName: '回報報名考生各梯次人數', dateStart: '2026-01-28', dateEnd: '2026-01-28', deadlineDisplay: '115.1.28', completed: false, type: 'submission' },
+            { id: '1-end', stage: 1, seq: '★', taskName: '回傳第一階段試務流程檢核表', dateStart: '2026-01-28', dateEnd: '2026-01-28', deadlineDisplay: '115.1.28', completed: false, type: 'submission', note: '本階段結案關鍵' },
+            { id: '2-1', stage: 2, seq: '(一)', taskName: '公告考生梯次名單前先送學會核可', dateStart: '2026-02-01', dateEnd: '2026-02-28', deadlineDisplay: '115.2', completed: false, type: 'task' },
+            { id: '2-2', stage: 2, seq: '(二)', taskName: '寄交各梯次考生名單(含證明掃描檔)', dateStart: '2026-02-13', dateEnd: '2026-02-13', deadlineDisplay: '115.2.13', completed: false, type: 'submission' },
+            { id: '2-3', stage: 2, seq: '(三)', taskName: '提報校外考官名單', dateStart: '2026-03-04', dateEnd: '2026-03-04', deadlineDisplay: '115.3.4', completed: false, type: 'submission' },
+            { id: '2-4', stage: 2, seq: '(四)', taskName: '寄發准考證', dateStart: '2026-03-16', dateEnd: '2026-03-20', deadlineDisplay: '115.3.16~20', completed: false, type: 'milestone' },
+            { id: '2-5', stage: 2, seq: '(五)', taskName: '確認校外考官排班時間', dateStart: '2026-04-10', dateEnd: '2026-04-10', deadlineDisplay: '115.4.10', completed: false, type: 'task' },
+            { id: '2-6', stage: 2, seq: '(六)', taskName: '確認校內考官排班時間', dateStart: '2026-04-10', dateEnd: '2026-04-10', deadlineDisplay: '115.4.10', completed: false, type: 'task' },
+            { id: '2-7', stage: 2, seq: '(七)', taskName: '確認外派考官排班/簽署須知', dateStart: '2026-04-10', dateEnd: '2026-04-10', deadlineDisplay: '115.4.10', completed: false, type: 'task' },
+            { id: '2-end', stage: 2, seq: '★', taskName: '回傳第二階段試務流程檢核表', dateStart: '2026-04-10', dateEnd: '2026-04-10', deadlineDisplay: '115.4.10', completed: false, type: 'submission', note: '本階段結案關鍵' },
+            { id: '3-1', stage: 3, seq: '(一)', taskName: '標準化病人排班', dateStart: '2026-04-20', dateEnd: '2026-04-20', deadlineDisplay: '115.4.20', completed: false, type: 'task' },
+            { id: '3-2', stage: 3, seq: '(二)', taskName: '備置常備/操作技能道具包', dateStart: '2026-04-20', dateEnd: '2026-04-20', deadlineDisplay: '115.4.20', completed: false, type: 'task' },
+            { id: '3-3', stage: 3, seq: '(三)', taskName: '領取考題 (擇日會議)', dateStart: '2026-04-20', dateEnd: '2026-04-22', deadlineDisplay: '115.4.20~22', completed: false, type: 'task' },
+            { id: '3-4', stage: 3, seq: '(四)', taskName: '網路連線測試', dateStart: '2026-04-20', dateEnd: '2026-04-23', deadlineDisplay: '115.4.20~23', completed: false, type: 'task' },
+            { id: '3-5', stage: 3, seq: '(五)', taskName: '確認考場診間錄影音設備功能', dateStart: '2026-04-24', dateEnd: '2026-05-03', deadlineDisplay: '考試當週', completed: false, type: 'task' },
+            { id: '3-6', stage: 3, seq: '(六)', taskName: '考場佈置 (考前二日)', dateStart: '2026-04-22', dateEnd: '2026-04-22', deadlineDisplay: '考前二日', completed: false, type: 'task' },
+            { id: '3-7', stage: 3, seq: '(七)', taskName: '考前檢閱 (考前一日)', dateStart: '2026-04-23', dateEnd: '2026-04-23', deadlineDisplay: '考前一日', completed: false, type: 'task' },
+            { id: '3-8', stage: 3, seq: '(八)', taskName: '人員出席確認 (考前一日)', dateStart: '2026-04-23', dateEnd: '2026-04-23', deadlineDisplay: '考前一日', completed: false, type: 'task' },
+            { id: '3-9', stage: 3, seq: '(九)', taskName: '考官參與評分共識會議 (考試日)', dateStart: '2026-04-24', dateEnd: '2026-05-03', deadlineDisplay: '考試日', completed: false, type: 'milestone' },
+            { id: '3-10', stage: 3, seq: '(十)', taskName: 'SP參與演出一致性訓練 (考試日)', dateStart: '2026-04-24', dateEnd: '2026-05-03', deadlineDisplay: '考試日', completed: false, type: 'task' },
+            { id: '3-11', stage: 3, seq: '(十一)', taskName: '考生成績統計寄交', dateStart: '2026-04-29', dateEnd: '2026-05-06', deadlineDisplay: '考畢3日內', completed: false, type: 'submission' },
+            { id: '3-end', stage: 3, seq: '★', taskName: '回傳第三階段試務流程檢核表', dateStart: '2026-05-06', dateEnd: '2026-05-06', deadlineDisplay: '115.5.6', completed: false, type: 'submission', note: '本階段結案關鍵' },
+            { id: '4-1', stage: 4, seq: '(一)', taskName: '寄交問卷、評核表、成果照片', dateStart: '2026-05-08', dateEnd: '2026-05-08', deadlineDisplay: '115.5.8', completed: false, type: 'submission' },
+            { id: '4-2', stage: 4, seq: '(二)', taskName: '動員人數統計', dateStart: '2026-05-08', dateEnd: '2026-05-08', deadlineDisplay: '115.5.8', completed: false, type: 'task' },
+            { id: '4-3', stage: 4, seq: '(三)', taskName: '繳交及格判定表、確認及格名單', dateStart: '2026-05-22', dateEnd: '2026-05-22', deadlineDisplay: '115.5.22', completed: false, type: 'submission' },
+            { id: '4-4', stage: 4, seq: '(四)', taskName: '成績單寄發', dateStart: '2026-05-26', dateEnd: '2026-05-26', deadlineDisplay: '115.5.26', completed: false, type: 'milestone' },
+            { id: '4-5', stage: 4, seq: '(五)', taskName: '成績複查結果通知', dateStart: '2026-05-29', dateEnd: '2026-05-29', deadlineDisplay: '115.5.29', completed: false, type: 'task' },
+            { id: '4-6', stage: 4, seq: '(六)', taskName: '函送及格判定表 (紙本)', dateStart: '2026-05-29', dateEnd: '2026-05-29', deadlineDisplay: '115.5.29', completed: false, type: 'submission' },
+            { id: '4-7', stage: 4, seq: '(七)', taskName: '繳交成績複查考生錄影音檔', dateStart: '2026-06-04', dateEnd: '2026-06-04', deadlineDisplay: '115.6.4', completed: false, type: 'submission', note: '若無複查可略' },
+            { id: '4-8', stage: 4, seq: '(八)', taskName: '及格證明寄發', dateStart: '2026-06-17', dateEnd: '2026-06-18', deadlineDisplay: '115.6.17~18', completed: false, type: 'milestone' },
+            { id: '4-end', stage: 4, seq: '★', taskName: '回傳第四階段試務流程檢核表', dateStart: '2026-06-18', dateEnd: '2026-06-18', deadlineDisplay: '115.6.18', completed: false, type: 'submission', note: '試務工作結案' },
+        ];
+
+        // --- Custom Components ---
+        const Modal = ({ isOpen, onClose, title, children, footer }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="relative bg-slate-800 rounded-xl border border-slate-700 shadow-2xl w-full max-w-md p-6 animate-slide-up">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-bold text-white">{title}</h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                                <Icon name="X" size={24} />
+                            </button>
+                        </div>
+                        <div className="text-slate-300 mb-6">
+                            {children}
+                        </div>
+                        {footer && (
+                            <div className="flex justify-end gap-3">
+                                {footer}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const Notification = ({ message, type = 'success', onClose }) => {
+            useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            const colors = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+
+            return (
+                <div className={`fixed bottom-6 right-6 ${colors} text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in z-50`}>
+                    <Icon name={type === 'success' ? 'Check' : 'AlertCircle'} size={20} />
+                    <span className="font-medium">{message}</span>
+                </div>
+            );
+        };
+
+        // --- Updated LoginModal for Personnel ID ---
+        const LoginModal = ({ isOpen, onClose, onLogin }) => {
+            const [personnelId, setPersonnelId] = useState("");
+            const [error, setError] = useState("");
+            const [isValidating, setIsValidating] = useState(false);
+
+            if (!isOpen) return null;
+
+            const handleSubmit = () => {
+                if (!personnelId.trim()) {
+                    setError("請輸入人事號");
+                    return;
+                }
+                
+                setIsValidating(true);
+                setError("");
+
+                // JSONP Verification
+                const script = document.createElement('script');
+                const callbackName = 'loginCallback_' + Date.now();
+                
+                // Define global callback
+                window[callbackName] = (response) => {
+                    setIsValidating(false);
+                    if (response.status === 'success') {
+                        onLogin(personnelId);
+                        onClose();
+                    } else {
+                        setError(response.message || "驗證失敗，請檢查人事號");
+                    }
+                    // Cleanup
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                };
+
+                // Handle script error
+                script.onerror = () => {
+                    setIsValidating(false);
+                    setError("連線失敗，請檢查網路或 Script 部署狀態");
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                };
+
+                script.src = `${GOOGLE_SCRIPT_URL}?action=login&id=${encodeURIComponent(personnelId)}&callback=${callbackName}`;
+                document.body.appendChild(script);
+            };
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+                    <div className="relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl w-full max-w-sm p-6 animate-slide-up">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <Icon name="Lock" size={20} className="text-indigo-400"/> 管理員登入
+                            </h3>
+                            <button onClick={onClose} className="text-slate-400 hover:text-white"><Icon name="X" size={24} /></button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1.5 uppercase font-bold">人事號 (ID)</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    placeholder="請輸入人事號"
+                                    value={personnelId}
+                                    onChange={(e) => {setPersonnelId(e.target.value); setError("");}}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+                                    disabled={isValidating}
+                                />
+                            </div>
+                            {error && <p className="text-red-400 text-xs flex items-center gap-1"><Icon name="AlertCircle" size={12}/> {error}</p>}
+                            <div className="pt-2">
+                                <button 
+                                    onClick={handleSubmit}
+                                    disabled={isValidating}
+                                    className={`w-full text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isValidating ? 'bg-slate-600 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-500'}`}
+                                >
+                                    {isValidating ? '驗證中...' : '驗證身份'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [currentDate] = useState(MOCK_CURRENT_DATE);
+            const [activeStage, setActiveStage] = useState(1);
+            const [filter, setFilter] = useState('all');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+            const [tasks, setTasks] = useState(initialTasks);
+            const [isSyncing, setIsSyncing] = useState(false);
+            const [isUploading, setIsUploading] = useState(false);
+            const [storageLoaded, setStorageLoaded] = useState(false);
+            
+            const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null });
+            const [notification, setNotification] = useState(null);
+            
+            // Auth State
+            const [currentUser, setCurrentUser] = useState(null); // Now stores ID, not Email
+            const [showLoginModal, setShowLoginModal] = useState(false);
+            const isAdmin = useMemo(() => !!currentUser, [currentUser]); // Simply check if logged in
+
+            const formRef = useRef(null);
+
+            // LocalStorage
+            const STORAGE_KEY = 'osce_dashboard_data_v1';
+            const AUTH_KEY = 'osce_dashboard_auth_v1_id'; // Changed key name
+
+            useEffect(() => {
+                // Load Data
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    try {
+                        const parsed = JSON.parse(savedData);
+                        if (parsed && Array.isArray(parsed)) {
+                            const merged = initialTasks.map(t => {
+                                const saved = parsed.find(p => p.id === t.id);
+                                return saved ? { ...t, completed: saved.completed } : t;
+                            });
+                            setTasks(merged);
+                        }
+                    } catch (e) { console.error("Load failed", e); }
+                }
+                
+                // Load Auth
+                const savedAuth = localStorage.getItem(AUTH_KEY);
+                if (savedAuth) {
+                    setCurrentUser(savedAuth);
+                }
+
+                setStorageLoaded(true);
+            }, []);
+
+            const handleLogin = (id) => {
+                setCurrentUser(id);
+                localStorage.setItem(AUTH_KEY, id);
+                setNotification({ message: '登入成功！已切換至管理模式', type: 'success' });
+            };
+
+            const handleLogout = () => {
+                setCurrentUser(null);
+                localStorage.removeItem(AUTH_KEY);
+                setNotification({ message: '已登出', type: 'success' });
+            };
+
+            const toggleTask = (id) => {
+                if (!isAdmin) {
+                    setNotification({ message: '僅管理員可修改進度', type: 'error' });
+                    return;
+                }
+                const newTasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+                setTasks(newTasks);
+                setIsSyncing(true);
+                const toSave = newTasks.map(t => ({ id: t.id, completed: t.completed }));
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+                setTimeout(() => setIsSyncing(false), 500);
+            };
+
+            const handleSyncClick = () => {
+                setConfirmModal({
+                    isOpen: true,
+                    onConfirm: performSync
+                });
+            };
+
+            const performSync = async () => {
+                setConfirmModal({ isOpen: false, onConfirm: null });
+                setIsUploading(true);
+                
+                try {
+                    if (formRef.current) {
+                        formRef.current.submit();
+                        setTimeout(() => {
+                            setIsUploading(false);
+                            setNotification({ message: '同步請求已送出！', type: 'success' });
+                        }, 2000);
+                    } else {
+                        throw new Error("Form reference missing");
+                    }
+                } catch (error) {
+                    console.error("Sync error:", error);
+                    setIsUploading(false);
+                    setNotification({ message: '同步發生錯誤', type: 'error' });
+                }
+            };
+
+            const copyForGoogleSheets = () => {
+                let tsv = "";
+                tasks.forEach(t => {
+                    const status = t.completed ? "已完成" : "未完成";
+                    const stageName = STAGES.find(s => s.id === t.stage)?.title || "";
+                    tsv += `${t.seq}\t${stageName}\t${t.taskName}\t${status}\t${t.deadlineDisplay}\t${t.note || ""}\n`;
+                });
+
+                const textArea = document.createElement("textarea");
+                textArea.value = tsv;
+                textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+                document.body.appendChild(textArea);
+                textArea.focus(); textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                    setNotification({ message: '資料已複製到剪貼簿！', type: 'success' });
+                } catch (err) {
+                    setNotification({ message: '複製失敗，請檢查權限', type: 'error' });
+                }
+                document.body.removeChild(textArea);
+            };
+
+            const downloadCSV = () => {
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+                csvContent += "項次,階段,工作項目,狀態,截止日期,備註\n";
+                tasks.forEach(t => {
+                    const status = t.completed ? "已完成" : "未完成";
+                    const stageName = STAGES.find(s => s.id === t.stage)?.title || "";
+                    const safeName = `"${t.taskName.replace(/"/g, '""')}"`;
+                    const safeNote = t.note ? `"${t.note.replace(/"/g, '""')}"` : "";
+                    csvContent += `${t.seq},${stageName},${safeName},${status},${t.deadlineDisplay},${safeNote}\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "OSCE_115_Progress.csv");
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            // Calc
+            const examDate = new Date('2026-04-24');
+            const daysUntilExam = Math.ceil((examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+            const stats = useMemo(() => {
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.completed).length;
+                const submissionTotal = tasks.filter(t => t.type === 'submission').length;
+                const submissionDone = tasks.filter(t => t.type === 'submission' && t.completed).length;
+                const activeTasks = tasks.filter(t => {
+                    if (t.completed) return false;
+                    const start = new Date(t.dateStart);
+                    const end = new Date(t.dateEnd);
+                    const isOngoing = currentDate >= start && currentDate <= end;
+                    const diffEnd = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
+                    return isOngoing || (diffEnd >= 0 && diffEnd <= 7);
+                });
+                const upcomingTasks = tasks.filter(t => {
+                    if (t.completed) return false;
+                    const start = new Date(t.dateStart);
+                    return start > currentDate;
+                }).sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()).slice(0, 3);
+                return { total, completed, progress: Math.round((completed / total) * 100), submissionProgress: Math.round((submissionDone / submissionTotal) * 100), activeTasks, upcomingTasks };
+            }, [tasks, currentDate]);
+
+            const getStatus = (task) => {
+                if (task.completed) return { label: '已完成', color: 'bg-emerald-900/40 text-emerald-300 border-emerald-800' };
+                const end = new Date(task.dateEnd);
+                if (currentDate > end) return { label: '已逾期', color: 'bg-rose-900/40 text-rose-300 border-rose-800' };
+                const diff = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
+                if (diff <= 3) return { label: '緊急', color: 'bg-orange-900/40 text-orange-300 border-orange-800' };
+                if (diff <= 7) return { label: '即將到期', color: 'bg-amber-900/40 text-amber-300 border-amber-800' };
+                return { label: '待辦中', color: 'bg-slate-800 text-slate-400 border-slate-700' };
+            };
+
+            const ActionCard = ({ task, daysLeft, onToggle }) => (
+                <div className="bg-slate-800 p-4 md:p-5 rounded-xl shadow-md border border-slate-700 flex flex-col md:flex-row md:items-center justify-between group hover:border-blue-500/50 transition-all gap-4">
+                    <div className="flex items-start gap-4">
+                        <button onClick={() => onToggle(task.id)} className={`transition-colors mt-1 ${isAdmin ? 'text-slate-500 hover:text-blue-400 cursor-pointer' : 'text-slate-600 cursor-not-allowed opacity-50'}`}>
+                            {task.completed ? <Icon name="CheckCircle2" className="text-emerald-500" size={28}/> : <Icon name="CheckCircle2" size={28}/>}
+                        </button>
+                        <div>
+                            <div className="font-bold text-slate-100 text-lg md:text-xl leading-snug">{task.taskName}</div>
+                            <div className="text-sm md:text-base text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+                                <span className="bg-slate-700 px-2 py-0.5 rounded text-slate-300">{task.seq}</span>
+                                <span className="flex items-center gap-1"><Icon name="Calendar" size={14}/> {task.deadlineDisplay}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center w-full md:w-auto pl-11 md:pl-0">
+                        {task.type === 'submission' && (
+                            <div className="text-xs font-bold text-rose-300 bg-rose-900/30 border border-rose-800 px-2 py-1 rounded mb-0 md:mb-1 inline-block">需回傳</div>
+                        )}
+                        <div className={`text-lg md:text-xl font-bold whitespace-nowrap ${daysLeft <= 3 ? 'text-rose-400' : 'text-blue-400'}`}>剩 {daysLeft} 天</div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-slate-950 font-sans text-slate-200 flex flex-col selection:bg-blue-500/30 pb-16 relative">
+                    {/* Hidden Form */}
+                    <iframe name="hidden_iframe_sync" style={{display: 'none'}}></iframe>
+                    <form ref={formRef} action={GOOGLE_SCRIPT_URL} method="post" target="hidden_iframe_sync" style={{display: 'none'}}>
+                        <input type="hidden" name="payload" value={JSON.stringify({ tasks: tasks })} />
+                    </form>
+
+                    <Modal isOpen={confirmModal.isOpen} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} title="確認同步" footer={<><button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors">取消</button><button onClick={confirmModal.onConfirm} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors">確認同步</button></>}>
+                        <p>確定要將目前的進度同步到 Google Sheet 嗎？</p>
+                        <p className="text-sm text-slate-400 mt-2">注意：這將會覆寫 Google Sheet 上對應的資料。</p>
+                    </Modal>
+
+                    <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} onLogin={handleLogin} />
+
+                    {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
+
+                    {isUploading && (
+                        <div className="loading-overlay">
+                            <div className="bg-slate-800 p-6 rounded-xl flex flex-col items-center gap-4 shadow-2xl border border-slate-700">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+                                <p className="text-white font-bold">正在同步至 Google Sheet...</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header */}
+                    <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20 print-hide">
+                        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-4 w-full md:w-auto">
+                                <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 shrink-0">
+                                    <Icon name="LayoutDashboard" size={24} className="text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-lg md:text-xl font-bold tracking-wide text-white leading-tight">115年奇美醫院第一次醫學臨床技能測驗(OSCE)試務進度儀表板</h1>
+                                    <p className="text-xs md:text-sm text-slate-400 mt-1 flex items-center gap-2">
+                                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${isAdmin ? 'text-emerald-400 bg-emerald-900/20 border-emerald-900/50' : 'text-slate-400 bg-slate-800 border-slate-700'}`}>
+                                            <Icon name={isAdmin ? "Users" : "Lock"} size={12} /> {isAdmin ? "管理員模式" : "訪客模式 (僅供檢視)"}
+                                        </span>
+                                        {isAdmin && isSyncing && <Icon name="Save" size={14} className="animate-pulse text-blue-400"/>}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex flex-col items-end gap-2 w-full md:w-auto">
+                                <div className="text-right text-xs text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700 hidden md:block">
+                                    網頁維護者: 教學部 盧英云 教學行政管理員
+                                </div>
+                                <div className="flex items-center gap-4 justify-between w-full md:justify-end">
+                                    <div className="text-right">
+                                        <p className="text-xs text-slate-400">距離考試 (4/24)</p>
+                                        <p className="text-2xl font-mono font-bold text-blue-400 leading-none">
+                                            {daysUntilExam} <span className="text-sm text-slate-500 font-normal">天</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {isAdmin ? (
+                                            <button onClick={handleLogout} className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition-colors">登出</button>
+                                        ) : (
+                                            <button onClick={() => setShowLoginModal(true)} className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded border border-indigo-500 transition-colors flex items-center gap-1"><Icon name="User" size={12}/> 登入</button>
+                                        )}
+                                        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-2 text-slate-300">
+                                            {isMobileMenuOpen ? <Icon name="X" size={28}/> : <Icon name="Menu" size={28}/>}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-8">
+                        {/* Action Center */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 print-hide">
+                            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-5 md:p-6 shadow-xl relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                                <h3 className="flex items-center gap-3 font-bold text-blue-100 text-xl md:text-2xl mb-6 relative z-10">
+                                    <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                                        <Icon name="Timer" size={22} className="text-blue-400" />
+                                    </div>
+                                    本週執行重點
+                                    <span className="text-sm font-normal text-blue-300 bg-blue-900/40 border border-blue-800 px-3 py-1 rounded-full ml-auto md:ml-2">
+                                        {stats.activeTasks.length} 項進行中
+                                    </span>
+                                </h3>
+                                <div className="space-y-4 relative z-10">
+                                    {stats.activeTasks.length === 0 ? (
+                                        <div className="text-base text-slate-500 italic py-8 text-center bg-slate-800/50 rounded-xl border border-dashed border-slate-700">目前無緊急待辦事項</div>
+                                    ) : (
+                                        stats.activeTasks.map(task => {
+                                            const end = new Date(task.dateEnd);
+                                            const daysLeft = Math.ceil((end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
+                                            return <ActionCard key={task.id} task={task} daysLeft={daysLeft} onToggle={toggleTask} />;
+                                        })
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 md:p-6 shadow-xl flex flex-col">
+                                <h3 className="flex items-center gap-3 font-bold text-slate-200 text-xl md:text-2xl mb-6">
+                                    <div className="p-2 bg-slate-800 rounded-lg border border-slate-700">
+                                        <Icon name="ArrowRight" size={22} className="text-slate-400" />
+                                    </div>
+                                    後續預備任務
+                                </h3>
+                                <div className="space-y-4 flex-1">
+                                    {stats.upcomingTasks.length === 0 ? <p className="text-base text-slate-500">無後續任務</p> : 
+                                        stats.upcomingTasks.map(task => {
+                                            const start = new Date(task.dateStart);
+                                            const daysToStart = Math.ceil((start.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
+                                            return (
+                                                <div key={task.id} className="flex items-center gap-5 p-4 rounded-xl bg-slate-800/40 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all">
+                                                    <div className="w-14 text-center shrink-0 flex flex-col justify-center bg-slate-800 rounded-lg py-2 border border-slate-700">
+                                                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">再過</div>
+                                                        <div className="text-xl md:text-2xl font-bold text-slate-300 leading-none my-0.5">{daysToStart}</div>
+                                                        <div className="text-[10px] text-slate-500">天</div>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-bold text-slate-200 text-lg md:text-xl truncate">{task.taskName}</div>
+                                                        <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                                                            預計啟動：{task.deadlineDisplay.split('~')[0]}
+                                                        </div>
+                                                    </div>
+                                                    {task.type === 'submission' && <Icon name="FileInput" size={18} className="text-indigo-400" />}
+                                                </div>
+                                            );
+                                        })
+                                    }
+                                </div>
+                                <div className="mt-6 pt-4 border-t border-slate-800 text-center">
+                                    <button onClick={() => { if(stats.upcomingTasks.length > 0) { setActiveStage(stats.upcomingTasks[0].stage); const element = document.getElementById('task-list'); element?.scrollIntoView({ behavior: 'smooth' }); }}} className="text-sm md:text-base text-blue-400 hover:text-blue-300 font-medium flex items-center justify-center gap-1 py-2 w-full hover:bg-slate-800 rounded-lg transition-colors">
+                                        前往該階段檢視詳情 <Icon name="ChevronRight" size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main Content */}
+                        <div id="task-list" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            {/* Sidebar Stats */}
+                            <div className={`lg:col-span-3 space-y-6 ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
+                                <div className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
+                                    <h3 className="text-base font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                                        <Icon name="PieChart" size={18} /> 整體完成率
+                                    </h3>
+                                    <div className="relative pt-2">
+                                        <div className="flex items-end justify-between mb-3">
+                                            <span className="text-4xl font-bold text-slate-100">{stats.progress}%</span>
+                                            <span className="text-sm text-slate-500 mb-1.5 font-mono">{stats.completed}/{stats.total} 項目</span>
+                                        </div>
+                                        <div className="w-full bg-slate-800 rounded-full h-3">
+                                            <div className="bg-blue-600 h-3 rounded-full transition-all duration-700" style={{ width: `${stats.progress}%` }}></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="mt-8 pt-6 border-t border-slate-800">
+                                        <h4 className="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                                            <Icon name="Send" size={16} /> 學會回傳進度
+                                        </h4>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-base text-slate-300">檢核表與名單</span>
+                                            <span className="text-base font-bold text-emerald-400">{stats.submissionProgress}%</span>
+                                        </div>
+                                        <div className="w-full bg-slate-800 rounded-full h-2.5">
+                                            <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-700" style={{ width: `${stats.submissionProgress}%` }}></div>
+                                        </div>
+                                    </div>
+
+                                    {/* Export Buttons - Only visible to Admin */}
+                                    {isAdmin && (
+                                        <div className="mt-8 pt-6 border-t border-slate-800 space-y-3 animate-fade-in">
+                                            <div className="text-xs font-bold text-indigo-400 mb-2 uppercase tracking-wider">管理員功能</div>
+                                            <button onClick={handleSyncClick} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-indigo-500 shadow-lg shadow-indigo-500/20">
+                                                <Icon name="UploadCloud" size={16} /> ☁️ 同步至 Google Sheet
+                                            </button>
+                                            <button onClick={copyForGoogleSheets} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700">
+                                                <Icon name="Copy" size={16} /> 📋 複製資料 (Excel/Sheet)
+                                            </button>
+                                            <button onClick={downloadCSV} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700">
+                                                <Icon name="Download" size={16} /> 📥 下載 CSV 備份
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <nav className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 overflow-hidden">
+                                    <div className="p-5 bg-slate-800/50 border-b border-slate-800">
+                                        <h3 className="font-bold text-slate-200 text-lg flex items-center gap-2">
+                                            <Icon name="ListTodo" size={20} /> 階段導航
+                                        </h3>
+                                    </div>
+                                    <div className="divide-y divide-slate-800">
+                                        {STAGES.map((stage) => {
+                                            const isActive = activeStage === stage.id;
+                                            const stageTasks = tasks.filter(t => t.stage === stage.id);
+                                            const isAllDone = stageTasks.every(t => t.completed);
+                                            
+                                            return (
+                                                <button key={stage.id} onClick={() => { setActiveStage(stage.id); setIsMobileMenuOpen(false); }} className={`w-full text-left p-5 flex items-center justify-between transition-all hover:bg-slate-800 ${isActive ? 'bg-blue-900/20 border-l-4 border-blue-500' : 'border-l-4 border-transparent'}`}>
+                                                    <div>
+                                                        <div className={`text-base md:text-lg font-bold ${isActive ? 'text-blue-400' : 'text-slate-300'}`}>
+                                                            {stage.title}
+                                                        </div>
+                                                        <div className="text-sm text-slate-500 mt-1.5 flex items-center gap-2">
+                                                            <span>{stage.period}</span>
+                                                            {isAllDone && <span className="text-emerald-500 flex items-center font-medium"><Icon name="CheckCircle2" size={12} className="mr-1"/> 完成</span>}
+                                                        </div>
+                                                    </div>
+                                                    {isActive && <Icon name="ChevronRight" size={20} className="text-blue-500" />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </nav>
+                            </div>
+
+                            {/* Task List */}
+                            <div className="lg:col-span-9 flex flex-col gap-6">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-5 md:p-6 rounded-2xl shadow-lg border border-slate-800">
+                                    <div>
+                                        <h2 className="text-2xl md:text-3xl font-bold text-white">{STAGES[activeStage - 1].title}</h2>
+                                        <p className="text-base md:text-lg text-slate-400 mt-2 flex items-center gap-2 flex-wrap">
+                                            檢核表回傳截止日：
+                                            <span className="font-mono font-bold text-rose-300 bg-rose-900/30 border border-rose-800 px-3 py-1 rounded">
+                                                {STAGES[activeStage - 1].returnDate}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div className="flex bg-slate-800 p-1.5 rounded-xl self-end md:self-center">
+                                        <button onClick={() => setFilter('all')} className={`px-5 py-2.5 text-base font-medium rounded-lg transition ${filter === 'all' ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}>全部</button>
+                                        <button onClick={() => setFilter('pending')} className={`px-5 py-2.5 text-base font-medium rounded-lg transition ${filter === 'pending' ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}>未完成</button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 overflow-hidden">
+                                    <div className="hidden md:grid grid-cols-12 gap-4 bg-slate-800/50 border-b border-slate-800 p-4 text-sm font-bold text-slate-400 uppercase tracking-wider">
+                                        <div className="col-span-1 text-center">狀態</div>
+                                        <div className="col-span-1">項次</div>
+                                        <div className="col-span-5">工作項目</div>
+                                        <div className="col-span-2">類型</div>
+                                        <div className="col-span-2">期限</div>
+                                        <div className="col-span-1 text-center">進度</div>
+                                    </div>
+
+                                    <div className="divide-y divide-slate-800">
+                                        {tasks.filter(t => t.stage === activeStage).filter(t => filter === 'all' || !t.completed).map(task => {
+                                            const status = getStatus(task);
+                                            return (
+                                                <div key={task.id} className={`p-5 md:p-4 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center transition-colors ${task.completed ? 'bg-slate-900/50' : 'hover:bg-slate-800/30'} ${task.type === 'submission' && !task.completed ? 'bg-indigo-900/10' : ''}`}>
+                                                    <div className="hidden md:flex md:col-span-1 justify-center">
+                                                        <button onClick={() => toggleTask(task.id)} className={`transition-all hover:scale-110 p-1 rounded-full ${task.completed ? 'text-emerald-500 bg-emerald-500/10' : isAdmin ? 'text-slate-600 hover:text-blue-500' : 'text-slate-700 cursor-not-allowed opacity-50'}`}>
+                                                            {task.completed ? <Icon name="CheckCircle2" className="fill-emerald-500/20" size={28}/> : <Icon name="CheckCircle2" size={28}/>}
+                                                        </button>
+                                                    </div>
+                                                    <div className="md:hidden flex items-start gap-3 mb-2">
+                                                        <button onClick={() => toggleTask(task.id)} className={`shrink-0 mt-0.5 ${task.completed ? 'text-emerald-500' : 'text-slate-600'}`}>
+                                                            <Icon name="CheckCircle2" size={32}/>
+                                                        </button>
+                                                        <div>
+                                                            <span className="inline-block bg-slate-800 text-slate-400 text-xs px-1.5 py-0.5 rounded mr-2 align-middle">{task.seq}</span>
+                                                            <span className={`text-xl font-bold align-middle ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>{task.taskName}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="hidden md:block md:col-span-1 text-slate-500 font-mono text-base">{task.seq}</div>
+                                                    <div className="hidden md:block md:col-span-5">
+                                                        <div className={`text-lg font-bold ${task.completed ? 'line-through text-slate-600' : 'text-slate-200'}`}>{task.taskName}</div>
+                                                        {task.note && !task.completed && <div className="text-sm text-amber-400 mt-1 flex items-center gap-1.5"><Icon name="AlertCircle" size={14}/> {task.note}</div>}
+                                                    </div>
+                                                    <div className="md:hidden pl-11 -mt-2">
+                                                        {task.note && !task.completed && <div className="text-base text-amber-400 mb-2 flex items-center gap-1.5"><Icon name="AlertCircle" size={16}/> {task.note}</div>}
+                                                    </div>
+                                                    <div className="md:col-span-2 pl-11 md:pl-0 flex flex-wrap gap-2">
+                                                        {task.type === 'submission' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-900/40 text-indigo-300 text-sm font-medium border border-indigo-800/50"><Icon name="FileInput" size={14}/> 繳交學會</span>}
+                                                        {task.type === 'milestone' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-900/40 text-purple-300 text-sm font-medium border border-purple-800/50"><Icon name="Flag" size={14}/> 重要時程</span>}
+                                                        {task.type === 'task' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 text-slate-400 text-sm font-medium border border-slate-700"><Icon name="Clock" size={14}/> 一般作業</span>}
+                                                    </div>
+                                                    <div className="md:col-span-2 pl-11 md:pl-0 text-base font-mono text-slate-400 flex items-center gap-2">
+                                                        <Icon name="Calendar" size={16} className="md:hidden"/> {task.deadlineDisplay}
+                                                    </div>
+                                                    <div className="md:col-span-1 pl-11 md:pl-0 md:text-center mt-2 md:mt-0">
+                                                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-bold border ${status.color}`}>{status.label}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {tasks.filter(t => t.stage === activeStage).length === 0 && <div className="p-16 text-center text-slate-500"><p className="text-lg">此階段尚無任務資料</p></div>}
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 text-sm md:text-base text-slate-400 flex items-start gap-3 shadow-sm">
+                                    <Icon name="Cloud" size={20} className="mt-0.5 shrink-0 text-indigo-400" />
+                                    <p className="leading-relaxed"><span className="font-bold text-slate-200">本地存檔中：</span> 您的進度會自動儲存於此瀏覽器中。標示 <span className="inline-flex items-center gap-1 mx-1.5 px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300 font-medium border border-indigo-700/50 align-middle text-xs"><Icon name="FileInput" size={12}/> 繳交學會</span> 之項目為學會檢核重點，請優先處理。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <footer className="w-full max-w-7xl mx-auto px-4 md:px-6 py-6 border-t border-slate-800 flex justify-end text-right">
+                        <div className="text-slate-500 text-sm font-medium">
+                            奇美醫院 臨床技能中心 製
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
