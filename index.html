@@ -19,12 +19,24 @@
             theme: {
                 extend: {
                     colors: {
-                        slate: { 850: '#1e293b', 950: '#020617' }
+                        // Custom glass colors
+                        glass: {
+                            100: 'rgba(255, 255, 255, 0.05)',
+                            200: 'rgba(255, 255, 255, 0.1)',
+                            300: 'rgba(255, 255, 255, 0.15)',
+                            border: 'rgba(255, 255, 255, 0.1)',
+                        }
+                    },
+                    boxShadow: {
+                        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+                        'glow': '0 0 10px rgba(59, 130, 246, 0.5)',
+                        'glow-sm': '0 0 5px rgba(59, 130, 246, 0.3)',
                     },
                     animation: {
-                        'fade-in': 'fadeIn 0.3s ease-out',
-                        'slide-up': 'slideUp 0.4s ease-out',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
                     },
                     keyframes: {
                         fadeIn: {
@@ -34,6 +46,10 @@
                         slideUp: {
                             '0%': { transform: 'translateY(20px)', opacity: '0' },
                             '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
                         }
                     }
                 }
@@ -42,15 +58,46 @@
     </script>
 
     <style>
-        body { background-color: #020617; color: #e2e8f0; }
+        body { 
+            /* 更深的背景漸層 */
+            background: radial-gradient(circle at top left, #0f172a, #020617, #000000);
+            background-attachment: fixed;
+            color: #f1f5f9; /* 預設文字更亮 */
+            min-height: 100vh;
+        }
+        
+        /* Glass Effect Utilities - Slightly Darker for Contrast */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.6); /* 更深的玻璃底色 */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15); /* 邊框亮一點點增加立體感 */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        }
+        
+        .glass-panel-light {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-header {
+            background: rgba(2, 6, 23, 0.9);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+        
         .print-hide { @media print { display: none; } }
+        
         /* Mobile Select */
         select.dark-select {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23e2e8f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-position: right 0.5rem center;
             background-repeat: no-repeat;
             background-size: 1.5em 1.5em;
@@ -58,9 +105,24 @@
             -webkit-appearance: none;
             appearance: none;
         }
+        
+        /* Background Ambient Orbs - Dimmed */
+        .ambient-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.25; /* 降低光暈亮度以凸顯文字 */
+        }
+        .orb-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: #1e40af; animation: float 10s infinite; }
+        .orb-2 { bottom: -20%; right: -10%; width: 60vw; height: 60vw; background: #4f46e5; animation: float 15s infinite reverse; }
+
     </style>
 </head>
 <body>
+    <div class="ambient-orb orb-1"></div>
+    <div class="ambient-orb orb-2"></div>
+
     <div id="root"></div>
 
     <script type="text/babel">
@@ -98,7 +160,9 @@
             Lock: <><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>,
             User: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></>,
             RefreshCw: <><path d="M21 2v6h-6" /><path d="M3 12a9 9 0 0 1 15-6.7L21 8" /><path d="M3 22v-6h6" /><path d="M21 12a9 9 0 0 1-15 6.7L3 16" /></>,
-            Edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>
+            Edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>,
+            GraduationCap: <path d="M22 10v6M2 10l10-5 10 5-10 5z" />,
+            Stethoscope: <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
         };
 
         const Icon = ({ name, size = 24, className }) => (
@@ -122,11 +186,14 @@
         // Mocking current date to show effect. Change to new Date() for production
         const MOCK_CURRENT_DATE = new Date('2026-01-20'); 
         const STAGES = [
-            { id: 1, title: '第一階段：籌備與報名', period: '1月', returnDate: '115.1.28' },
-            { id: 2, title: '第二階段：試務安排', period: '2-4月', returnDate: '115.4.10' },
-            { id: 3, title: '第三階段：考場設置與執行', period: '4-5月', returnDate: '115.5.6' },
-            { id: 4, title: '第四階段：成績結算與檢討', period: '5-6月', returnDate: '115.6.18' },
+            { id: 1, title: '第一階段：籌備與報名', period: '1月', returnDate: '115.1.28', category: 'official' },
+            { id: 2, title: '第二階段：試務安排', period: '2-4月', returnDate: '115.4.10', category: 'official' },
+            { id: 3, title: '第三階段：考場設置與執行', period: '4-5月', returnDate: '115.5.6', category: 'official' },
+            { id: 4, title: '第四階段：成績結算與檢討', period: '5-6月', returnDate: '115.6.18', category: 'official' },
+            // 新增: 院內特訓階段 (ID 99)
+            { id: 99, title: '🏥 院內 UGY 國考特訓', period: '1-4月', returnDate: '內部行程', category: 'internal' },
         ];
+        
         const initialTasks = [
             { id: '1-1', stage: 1, seq: '(一)', taskName: '工作坊/訓練課程籌辦', dateStart: '2025-01-01', dateEnd: '2025-12-31', deadlineDisplay: '114.1~12', completed: false, type: 'task', userNote: '' },
             { id: '1-2', stage: 1, seq: '(二)', taskName: '考官、標準化病人遴選', dateStart: '2025-08-01', dateEnd: '2025-12-31', deadlineDisplay: '114.8~12', completed: false, type: 'task', userNote: '' },
@@ -168,6 +235,13 @@
             { id: '4-7', stage: 4, seq: '(七)', taskName: '繳交成績複查考生錄影音檔', dateStart: '2026-06-04', dateEnd: '2026-06-04', deadlineDisplay: '115.6.4', completed: false, type: 'submission', note: '若無複查可略', userNote: '' },
             { id: '4-8', stage: 4, seq: '(八)', taskName: '及格證明寄發', dateStart: '2026-06-17', dateEnd: '2026-06-18', deadlineDisplay: '115.6.17~18', completed: false, type: 'milestone', userNote: '' },
             { id: '4-end', stage: 4, seq: '★', taskName: '回傳第四階段試務流程檢核表', dateStart: '2026-06-18', dateEnd: '2026-06-18', deadlineDisplay: '115.6.18', completed: false, type: 'submission', note: '試務工作結案', userNote: '' },
+            
+            // --- 院內特訓任務 (Stage 99) ---
+            { id: 'int-1', stage: 99, seq: '1', taskName: '教學型 OSCE 測驗', dateStart: '2026-01-24', dateEnd: '2026-01-24', deadlineDisplay: '115.1.24 (六)', completed: false, type: 'training', note: 'UGY 對象', userNote: '' },
+            { id: 'int-2', stage: 99, seq: '2', taskName: '高階型 OSCE 測驗 (第一梯)', dateStart: '2026-03-21', dateEnd: '2026-03-21', deadlineDisplay: '115.3.21 (六)', completed: false, type: 'training', note: '', userNote: '' },
+            { id: 'int-3', stage: 99, seq: '3', taskName: '臨床技能操作國考複習班', dateStart: '2026-03-25', dateEnd: '2026-03-25', deadlineDisplay: '115.3.25 (三)', completed: false, type: 'training', note: '', userNote: '' },
+            { id: 'int-4', stage: 99, seq: '4', taskName: '高階型 OSCE 測驗 (第二梯)', dateStart: '2026-03-28', dateEnd: '2026-03-28', deadlineDisplay: '115.3.28 (六)', completed: false, type: 'training', note: '', userNote: '' },
+            { id: 'int-5', stage: 99, seq: '5', taskName: '身體理學檢查教學型 OSCE', dateStart: '2026-04-11', dateEnd: '2026-04-11', deadlineDisplay: '115.4.11 (六)', completed: false, type: 'training', note: '', userNote: '' },
         ];
 
         // --- Custom Components ---
@@ -176,14 +250,14 @@
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose}></div>
-                    <div className="relative bg-slate-800 rounded-xl border border-slate-700 shadow-2xl w-full max-w-md p-6 animate-slide-up">
-                        <div className="flex justify-between items-center mb-4">
+                    <div className="relative glass-panel rounded-xl shadow-2xl w-full max-w-md p-6 animate-slide-up border-0">
+                        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
                             <h3 className="text-xl font-bold text-white">{title}</h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
+                            <button onClick={onClose} className="text-slate-300 hover:text-white transition-colors">
                                 <Icon name="X" size={24} />
                             </button>
                         </div>
-                        <div className="text-slate-300 mb-6">
+                        <div className="text-slate-200 mb-6 font-bold">
                             {children}
                         </div>
                         {footer && (
@@ -202,17 +276,16 @@
                 return () => clearTimeout(timer);
             }, [onClose]);
 
-            const colors = type === 'success' ? 'bg-emerald-600' : 'bg-red-600';
+            const bgClass = type === 'success' ? 'bg-emerald-600/90 border-emerald-500' : 'bg-red-600/90 border-red-500';
 
             return (
-                <div className={`fixed bottom-6 right-6 ${colors} text-white px-6 py-3 rounded-lg shadow-xl flex items-center gap-3 animate-fade-in z-50`}>
+                <div className={`fixed bottom-6 right-6 ${bgClass} border text-white px-6 py-3 rounded-lg shadow-glow backdrop-blur-md flex items-center gap-3 animate-fade-in z-50 font-bold`}>
                     <Icon name={type === 'success' ? 'Check' : 'AlertCircle'} size={20} />
-                    <span className="font-medium">{message}</span>
+                    <span className="font-bold">{message}</span>
                 </div>
             );
         };
 
-        // --- Updated LoginModal for Personnel ID ---
         const LoginModal = ({ isOpen, onClose, onLogin }) => {
             const [personnelId, setPersonnelId] = useState("");
             const [error, setError] = useState("");
@@ -229,11 +302,9 @@
                 setIsValidating(true);
                 setError("");
 
-                // JSONP Verification
                 const script = document.createElement('script');
                 const callbackName = 'loginCallback_' + Date.now();
                 
-                // Define global callback
                 window[callbackName] = (response) => {
                     setIsValidating(false);
                     if (response.status === 'success') {
@@ -242,12 +313,10 @@
                     } else {
                         setError(response.message || "驗證失敗，請檢查人事號");
                     }
-                    // Cleanup
                     delete window[callbackName];
                     document.body.removeChild(script);
                 };
 
-                // Handle script error
                 script.onerror = () => {
                     setIsValidating(false);
                     setError("連線失敗，請檢查網路或 Script 部署狀態");
@@ -262,19 +331,19 @@
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
-                    <div className="relative bg-slate-900 rounded-xl border border-slate-700 shadow-2xl w-full max-w-sm p-6 animate-slide-up">
-                        <div className="flex justify-between items-center mb-6">
+                    <div className="relative glass-panel rounded-xl shadow-2xl w-full max-w-sm p-6 animate-slide-up border-0">
+                        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-3">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <Icon name="Lock" size={20} className="text-indigo-400"/> 管理員登入
                             </h3>
-                            <button onClick={onClose} className="text-slate-400 hover:text-white"><Icon name="X" size={24} /></button>
+                            <button onClick={onClose} className="text-slate-300 hover:text-white"><Icon name="X" size={24} /></button>
                         </div>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs text-slate-400 mb-1.5 uppercase font-bold">人事號 (ID)</label>
+                                <label className="block text-xs text-slate-300 mb-1.5 uppercase font-bold tracking-wider">人事號 (ID)</label>
                                 <input 
                                     type="password" 
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-500"
+                                    className="w-full bg-black/30 border border-white/10 rounded-lg px-4 py-2 text-white font-bold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder-slate-500"
                                     placeholder="●●●●●●"
                                     value={personnelId}
                                     onChange={(e) => {setPersonnelId(e.target.value); setError("");}}
@@ -282,12 +351,12 @@
                                     disabled={isValidating}
                                 />
                             </div>
-                            {error && <p className="text-red-400 text-xs flex items-center gap-1"><Icon name="AlertCircle" size={12}/> {error}</p>}
+                            {error && <p className="text-red-400 text-xs flex items-center gap-1 font-bold"><Icon name="AlertCircle" size={12}/> {error}</p>}
                             <div className="pt-2">
                                 <button 
                                     onClick={handleSubmit}
                                     disabled={isValidating}
-                                    className={`w-full text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${isValidating ? 'bg-slate-600 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-500'}`}
+                                    className={`w-full text-white font-bold py-2 rounded-lg transition-all shadow-glow flex items-center justify-center gap-2 ${isValidating ? 'bg-slate-600 cursor-wait' : 'bg-indigo-600 hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98]'}`}
                                 >
                                     {isValidating ? '驗證中...' : '驗證身份'}
                                 </button>
@@ -312,7 +381,6 @@
             const [confirmModal, setConfirmModal] = useState({ isOpen: false, onConfirm: null });
             const [notification, setNotification] = useState(null);
             
-            // Auth State
             const [currentUser, setCurrentUser] = useState(null); 
             const [showLoginModal, setShowLoginModal] = useState(false);
             const isAdmin = useMemo(() => !!currentUser, [currentUser]); 
@@ -322,9 +390,7 @@
             const STORAGE_KEY = 'osce_dashboard_data_v1';
             const AUTH_KEY = 'osce_dashboard_auth_v1_id'; 
 
-            // Auto-load on mount
             useEffect(() => {
-                // 1. Load Local
                 const savedData = localStorage.getItem(STORAGE_KEY);
                 if (savedData) {
                     try {
@@ -339,15 +405,12 @@
                     } catch (e) { console.error("Load failed", e); }
                 }
                 
-                // 2. Load Auth
                 const savedAuth = localStorage.getItem(AUTH_KEY);
                 if (savedAuth) {
                     setCurrentUser(savedAuth);
                 }
 
                 setStorageLoaded(true);
-
-                // 3. Auto fetch from cloud (silent update)
                 silentFetchCloudData();
             }, []);
 
@@ -360,7 +423,6 @@
                     setIsLoadingCloud(false);
                     if (response.status === 'success') {
                         const cloudData = response.data;
-                        
                         setTasks(prevTasks => {
                             const updated = prevTasks.map(t => {
                                 if (cloudData.hasOwnProperty(t.taskName)) {
@@ -372,13 +434,10 @@
                                 }
                                 return t; 
                             });
-                            
-                            // Update local storage too so offline works next time
                             const toSave = updated.map(t => ({ id: t.id, completed: t.completed, userNote: t.userNote }));
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
                             return updated;
                         });
-                        
                         console.log("Cloud data synced successfully");
                     }
                     delete window[callbackName];
@@ -424,7 +483,6 @@
             const updateUserNote = (id, newNote) => {
                 const newTasks = tasks.map(t => t.id === id ? { ...t, userNote: newNote } : t);
                 setTasks(newTasks);
-                // Don't sync immediately on every keystroke, wait for blur or manual sync
                 const toSave = newTasks.map(t => ({ id: t.id, completed: t.completed, userNote: t.userNote }));
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
             };
@@ -462,7 +520,6 @@
                 tasks.forEach(t => {
                     const status = t.completed ? "已完成" : "未完成";
                     const stageName = STAGES.find(s => s.id === t.stage)?.title || "";
-                    // Replace newlines in note to avoid breaking TSV
                     const safeNote = (t.userNote || "").replace(/\n/g, " ");
                     tsv += `${t.seq}\t${stageName}\t${t.taskName}\t${status}\t${t.deadlineDisplay}\t${t.note || ""}\t${safeNote}\n`;
                 });
@@ -526,71 +583,62 @@
                 return { total, completed, progress: Math.round((completed / total) * 100), submissionProgress: Math.round((submissionDone / submissionTotal) * 100), activeTasks, upcomingTasks };
             }, [tasks, currentDate]);
 
-            // Enhanced RAG Status Logic (Traffic Lights)
             const getTrafficLight = (task) => {
-                if (task.completed) return 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'; // Green Light
-                
+                if (task.completed) return 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'; 
                 const end = new Date(task.dateEnd);
                 const daysUntilDeadline = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
-                
-                if (currentDate > end) return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse'; // Red Light
-                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) return 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.6)]'; // Yellow Light
-                
-                return 'bg-slate-600'; // Off/Future
+                if (currentDate > end) return 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse'; 
+                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) return 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]'; 
+                return 'bg-slate-600/50'; 
             };
 
             const getStatusLabel = (task) => {
-                if (task.completed) return { text: '已完成', class: 'text-emerald-400 bg-emerald-900/30 border-emerald-800' };
-                
+                if (task.completed) return { text: '已完成', class: 'text-emerald-300 bg-emerald-500/20 border-emerald-500/30' };
                 const end = new Date(task.dateEnd);
                 const daysUntilDeadline = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
-                
-                if (currentDate > end) return { text: '已逾期', class: 'text-red-400 bg-red-900/30 border-red-800' };
-                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) return { text: '即將到期', class: 'text-amber-400 bg-amber-900/30 border-amber-800' };
-                
-                return { text: '待辦中', class: 'text-slate-400 bg-slate-800 border-slate-600' };
+                if (currentDate > end) return { text: '已逾期', class: 'text-red-300 bg-red-500/20 border-red-500/30' };
+                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) return { text: '即將到期', class: 'text-amber-300 bg-amber-500/20 border-amber-500/30' };
+                return { text: '待辦中', class: 'text-slate-400 bg-slate-700/50 border-slate-600/30' };
             };
 
             const ActionCard = ({ task, daysLeft, onToggle }) => (
-                <div className="bg-slate-800 p-4 md:p-5 rounded-xl shadow-md border border-slate-700 flex flex-col md:flex-row md:items-center justify-between group hover:border-blue-500/50 transition-all gap-4 relative">
-                    {/* Traffic Light Indicator */}
-                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${getTrafficLight(task).includes('red') ? 'bg-red-500' : getTrafficLight(task).includes('yellow') ? 'bg-yellow-400' : getTrafficLight(task).includes('emerald') ? 'bg-emerald-500' : 'bg-slate-600'}`}></div>
-                    
-                    <div className="flex items-start gap-4 pl-2">
-                        <button onClick={() => onToggle(task.id)} className={`transition-colors mt-1 ${isAdmin ? 'text-slate-500 hover:text-blue-400 cursor-pointer' : 'text-slate-600 cursor-not-allowed opacity-50'}`}>
-                            {task.completed ? <Icon name="CheckCircle2" className="text-emerald-500" size={28}/> : <Icon name="CheckCircle2" size={28}/>}
+                <div className="glass-panel-light p-4 md:p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between group hover:bg-white/5 transition-all gap-4 relative">
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${getTrafficLight(task).includes('red') ? 'bg-red-500' : getTrafficLight(task).includes('amber') ? 'bg-amber-400' : getTrafficLight(task).includes('emerald') ? 'bg-emerald-500' : 'bg-slate-600'}`}></div>
+                    <div className="flex items-start gap-4 pl-3">
+                        <button onClick={() => onToggle(task.id)} className={`transition-colors mt-1 ${isAdmin ? 'text-slate-400 hover:text-blue-400 cursor-pointer' : 'text-slate-600 cursor-not-allowed opacity-50'}`}>
+                            {task.completed ? <Icon name="CheckCircle2" className="text-emerald-400 drop-shadow-md" size={28}/> : <Icon name="CheckCircle2" size={28}/>}
                         </button>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <div className={`w-3 h-3 rounded-full ${getTrafficLight(task)}`}></div>
+                                <div className={`w-2.5 h-2.5 rounded-full ${getTrafficLight(task)}`}></div>
                                 <div className="font-bold text-slate-100 text-lg md:text-xl leading-snug">{task.taskName}</div>
                             </div>
-                            <div className="text-sm md:text-base text-slate-400 mt-1 flex flex-wrap items-center gap-2">
-                                <span className="bg-slate-700 px-2 py-0.5 rounded text-slate-300">{task.seq}</span>
-                                <span className="flex items-center gap-1"><Icon name="Calendar" size={14}/> {task.deadlineDisplay}</span>
+                            <div className="text-sm md:text-base text-slate-300 font-bold mt-1 flex flex-wrap items-center gap-2">
+                                <span className="bg-white/5 px-2 py-0.5 rounded text-slate-200 border border-white/10">{task.seq}</span>
+                                <span className="flex items-center gap-1 font-mono font-bold text-xs bg-black/20 px-2 py-1 rounded border border-white/5 text-slate-200"><Icon name="Calendar" size={14}/> {task.deadlineDisplay}</span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center w-full md:w-auto pl-11 md:pl-0">
+                    <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center w-full md:w-auto pl-12 md:pl-0">
                         {task.type === 'submission' && (
-                            <div className="text-xs font-bold text-rose-300 bg-rose-900/30 border border-rose-800 px-2 py-1 rounded mb-0 md:mb-1 inline-block">需回傳</div>
+                            <div className="text-xs font-bold text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded mb-0 md:mb-1 inline-block backdrop-blur-sm">需回傳</div>
                         )}
-                        <div className={`text-lg md:text-xl font-bold whitespace-nowrap ${daysLeft <= 3 ? 'text-rose-400' : 'text-blue-400'}`}>剩 {daysLeft} 天</div>
+                        <div className={`text-lg md:text-xl font-bold whitespace-nowrap ${daysLeft <= 3 ? 'text-rose-400' : 'text-blue-400'} drop-shadow-sm`}>剩 {daysLeft} 天</div>
                     </div>
                 </div>
             );
 
             return (
-                <div className="min-h-screen bg-slate-950 font-sans text-slate-200 flex flex-col selection:bg-blue-500/30 pb-16 relative">
+                <div className="min-h-screen font-sans text-slate-200 flex flex-col pb-16 relative">
                     {/* Hidden Form */}
                     <iframe name="hidden_iframe_sync" style={{display: 'none'}}></iframe>
                     <form ref={formRef} action={GOOGLE_SCRIPT_URL} method="post" target="hidden_iframe_sync" style={{display: 'none'}}>
                         <input type="hidden" name="payload" value={JSON.stringify({ tasks: tasks })} />
                     </form>
 
-                    <Modal isOpen={confirmModal.isOpen} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} title="確認同步" footer={<><button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="px-4 py-2 rounded-lg text-slate-300 hover:bg-slate-700 transition-colors">取消</button><button onClick={confirmModal.onConfirm} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors">確認同步</button></>}>
+                    <Modal isOpen={confirmModal.isOpen} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} title="確認同步" footer={<><button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="px-4 py-2 rounded-lg text-slate-300 font-bold hover:bg-white/10 transition-colors">取消</button><button onClick={confirmModal.onConfirm} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold transition-colors shadow-glow-sm">確認同步</button></>}>
                         <p>確定要將目前的進度同步到 Google Sheet 嗎？</p>
-                        <p className="text-sm text-slate-400 mt-2">注意：這將會覆寫 Google Sheet 上對應的資料。</p>
+                        <p className="text-sm text-slate-400 mt-2 font-bold">注意：這將會覆寫 Google Sheet 上對應的資料。</p>
                     </Modal>
 
                     <LoginModal isOpen={showLoginModal} onClose={() => setShowLoginModal(false)} onLogin={handleLogin} />
@@ -599,7 +647,7 @@
 
                     {isUploading && (
                         <div className="loading-overlay">
-                            <div className="bg-slate-800 p-6 rounded-xl flex flex-col items-center gap-4 shadow-2xl border border-slate-700">
+                            <div className="glass-panel p-6 rounded-xl flex flex-col items-center gap-4">
                                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
                                 <p className="text-white font-bold">正在同步至 Google Sheet...</p>
                             </div>
@@ -607,16 +655,16 @@
                     )}
 
                     {/* Header */}
-                    <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-20 print-hide">
+                    <header className="glass-header sticky top-0 z-20 print-hide">
                         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-4 w-full md:w-auto">
-                                <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-900/20 shrink-0">
+                                <div className="bg-blue-600 p-2.5 rounded-xl shadow-glow shrink-0">
                                     <Icon name="LayoutDashboard" size={24} className="text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-lg md:text-xl font-bold tracking-wide text-white leading-tight">115年奇美醫院第一次醫學臨床技能測驗(OSCE)試務進度儀表板</h1>
-                                    <p className="text-xs md:text-sm text-slate-400 mt-1 flex items-center gap-2">
-                                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs ${isAdmin ? 'text-emerald-400 bg-emerald-900/20 border-emerald-900/50' : 'text-slate-400 bg-slate-800 border-slate-700'}`}>
+                                    <h1 className="text-lg md:text-xl font-bold tracking-wide text-white leading-tight drop-shadow-sm">115年奇美醫院第一次醫學臨床技能測驗(OSCE)試務進度儀表板</h1>
+                                    <p className="text-xs md:text-sm text-slate-300 font-bold mt-1 flex items-center gap-2">
+                                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs backdrop-blur-md ${isAdmin ? 'text-emerald-300 bg-emerald-500/10 border-emerald-500/30' : 'text-slate-300 bg-white/5 border-white/10'}`}>
                                             <Icon name={isAdmin ? "Users" : "Lock"} size={12} /> {isAdmin ? "管理員模式" : "訪客模式 (僅供檢視)"}
                                         </span>
                                         {isAdmin && isSyncing && <Icon name="Save" size={14} className="animate-pulse text-blue-400"/>}
@@ -626,21 +674,21 @@
                             </div>
                             
                             <div className="flex flex-col items-end gap-2 w-full md:w-auto">
-                                <div className="text-right text-xs text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700 hidden md:block">
+                                <div className="text-right text-xs text-slate-300 font-bold bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 hidden md:block backdrop-blur-sm">
                                     網頁維護者: 教學部 盧英云 教學行政管理員
                                 </div>
                                 <div className="flex items-center gap-4 justify-between w-full md:justify-end">
                                     <div className="text-right">
-                                        <p className="text-xs text-slate-400 mb-1">距離考試 (4/24)</p>
-                                        <p className="text-4xl md:text-5xl font-mono font-bold text-yellow-400 leading-none drop-shadow-[0_2px_4px_rgba(250,204,21,0.3)]">
+                                        <p className="text-xs text-slate-300 font-bold mb-1">距離考試 (4/24)</p>
+                                        <p className="text-4xl md:text-5xl font-mono font-bold text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
                                             {daysUntilExam} <span className="text-lg text-slate-400 font-normal">天</span>
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {isAdmin ? (
-                                            <button onClick={handleLogout} className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded border border-slate-700 transition-colors">登出</button>
+                                            <button onClick={handleLogout} className="text-xs font-bold bg-white/5 hover:bg-white/10 text-slate-300 px-3 py-1.5 rounded border border-white/10 transition-colors backdrop-blur-sm">登出</button>
                                         ) : (
-                                            <button onClick={() => setShowLoginModal(true)} className="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded border border-indigo-500 transition-colors flex items-center gap-1"><Icon name="User" size={12}/> 登入</button>
+                                            <button onClick={() => setShowLoginModal(true)} className="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded border border-indigo-500/50 transition-colors flex items-center gap-1 shadow-glow-sm"><Icon name="User" size={12}/> 登入</button>
                                         )}
                                         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-2 text-slate-300">
                                             {isMobileMenuOpen ? <Icon name="X" size={28}/> : <Icon name="Menu" size={28}/>}
@@ -654,20 +702,20 @@
                     <div className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-8">
                         {/* Action Center */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 print-hide">
-                            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700 p-5 md:p-6 shadow-xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+                            <div className="glass-panel p-5 md:p-6 rounded-2xl relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none group-hover:bg-blue-500/20 transition-all duration-700"></div>
                                 <h3 className="flex items-center gap-3 font-bold text-blue-100 text-xl md:text-2xl mb-6 relative z-10">
-                                    <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+                                    <div className="p-2 bg-blue-500/20 rounded-lg border border-blue-500/30 shadow-glow-sm">
                                         <Icon name="Timer" size={22} className="text-blue-400" />
                                     </div>
                                     本週執行重點
-                                    <span className="text-sm font-normal text-blue-300 bg-blue-900/40 border border-blue-800 px-3 py-1 rounded-full ml-auto md:ml-2">
+                                    <span className="text-sm font-bold text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full ml-auto md:ml-2 backdrop-blur-md">
                                         {stats.activeTasks.length} 項進行中
                                     </span>
                                 </h3>
                                 <div className="space-y-4 relative z-10">
                                     {stats.activeTasks.length === 0 ? (
-                                        <div className="text-base text-slate-500 italic py-8 text-center bg-slate-800/50 rounded-xl border border-dashed border-slate-700">目前無緊急待辦事項</div>
+                                        <div className="text-base text-slate-300 font-bold italic py-8 text-center bg-white/5 rounded-xl border border-dashed border-white/10">目前無緊急待辦事項</div>
                                     ) : (
                                         stats.activeTasks.map(task => {
                                             const end = new Date(task.dateEnd);
@@ -678,9 +726,9 @@
                                 </div>
                             </div>
 
-                            <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 md:p-6 shadow-xl flex flex-col">
+                            <div className="glass-panel p-5 md:p-6 rounded-2xl flex flex-col">
                                 <h3 className="flex items-center gap-3 font-bold text-slate-200 text-xl md:text-2xl mb-6">
-                                    <div className="p-2 bg-slate-800 rounded-lg border border-slate-700">
+                                    <div className="p-2 bg-white/5 rounded-lg border border-white/10">
                                         <Icon name="ArrowRight" size={22} className="text-slate-400" />
                                     </div>
                                     後續預備任務
@@ -691,15 +739,15 @@
                                             const start = new Date(task.dateStart);
                                             const daysToStart = Math.ceil((start.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
                                             return (
-                                                <div key={task.id} className="flex items-center gap-5 p-4 rounded-xl bg-slate-800/40 hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all">
-                                                    <div className="w-14 text-center shrink-0 flex flex-col justify-center bg-slate-800 rounded-lg py-2 border border-slate-700">
-                                                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">再過</div>
+                                                <div key={task.id} className="flex items-center gap-5 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 transition-all">
+                                                    <div className="w-14 text-center shrink-0 flex flex-col justify-center bg-black/20 rounded-lg py-2 border border-white/5">
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">再過</div>
                                                         <div className="text-xl md:text-2xl font-bold text-slate-300 leading-none my-0.5">{daysToStart}</div>
-                                                        <div className="text-[10px] text-slate-500">天</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold">天</div>
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="font-bold text-slate-200 text-lg md:text-xl truncate">{task.taskName}</div>
-                                                        <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                                                        <div className="text-sm text-slate-300 font-bold mt-1 flex items-center gap-2">
                                                             <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
                                                             預計啟動：{task.deadlineDisplay.split('~')[0]}
                                                         </div>
@@ -710,8 +758,8 @@
                                         })
                                     }
                                 </div>
-                                <div className="mt-6 pt-4 border-t border-slate-800 text-center">
-                                    <button onClick={() => { if(stats.upcomingTasks.length > 0) { setActiveStage(stats.upcomingTasks[0].stage); const element = document.getElementById('task-list'); element?.scrollIntoView({ behavior: 'smooth' }); }}} className="text-sm md:text-base text-blue-400 hover:text-blue-300 font-medium flex items-center justify-center gap-1 py-2 w-full hover:bg-slate-800 rounded-lg transition-colors">
+                                <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                                    <button onClick={() => { if(stats.upcomingTasks.length > 0) { setActiveStage(stats.upcomingTasks[0].stage); const element = document.getElementById('task-list'); element?.scrollIntoView({ behavior: 'smooth' }); }}} className="text-sm md:text-base text-blue-400 font-bold hover:text-blue-300 flex items-center justify-center gap-1 py-2 w-full hover:bg-white/5 rounded-lg transition-colors">
                                         前往該階段檢視詳情 <Icon name="ChevronRight" size={16} />
                                     </button>
                                 </div>
@@ -720,76 +768,93 @@
 
                         {/* Main Content */}
                         <div id="task-list" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                            {/* Sidebar Stats */}
+                            {/* Sidebar Stats (Desktop Only) */}
                             <div className={`lg:col-span-3 space-y-6 ${isMobileMenuOpen ? 'block' : 'hidden lg:block'}`}>
-                                <div className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
+                                <div className="glass-panel p-6 rounded-2xl">
                                     <h3 className="text-base font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
                                         <Icon name="PieChart" size={18} /> 整體完成率
                                     </h3>
                                     <div className="relative pt-2">
                                         <div className="flex items-end justify-between mb-3">
                                             <span className="text-4xl font-bold text-slate-100">{stats.progress}%</span>
-                                            <span className="text-sm text-slate-500 mb-1.5 font-mono">{stats.completed}/{stats.total} 項目</span>
+                                            <span className="text-sm text-slate-400 font-bold mb-1.5 font-mono">{stats.completed}/{stats.total} 項目</span>
                                         </div>
-                                        <div className="w-full bg-slate-800 rounded-full h-3">
-                                            <div className="bg-blue-600 h-3 rounded-full transition-all duration-700" style={{ width: `${stats.progress}%` }}></div>
+                                        <div className="w-full bg-slate-700/30 rounded-full h-3 backdrop-blur-sm">
+                                            <div className="bg-blue-600 h-3 rounded-full transition-all duration-700 shadow-glow-sm" style={{ width: `${stats.progress}%` }}></div>
                                         </div>
                                     </div>
                                     
-                                    <div className="mt-8 pt-6 border-t border-slate-800">
+                                    <div className="mt-8 pt-6 border-t border-white/10">
                                         <h4 className="text-sm font-bold text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-wider">
                                             <Icon name="Send" size={16} /> 學會回傳進度
                                         </h4>
                                         <div className="flex justify-between items-center mb-2">
-                                            <span className="text-base text-slate-300">檢核表與名單</span>
+                                            <span className="text-base text-slate-300 font-bold">檢核表與名單</span>
                                             <span className="text-base font-bold text-emerald-400">{stats.submissionProgress}%</span>
                                         </div>
-                                        <div className="w-full bg-slate-800 rounded-full h-2.5">
-                                            <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-700" style={{ width: `${stats.submissionProgress}%` }}></div>
+                                        <div className="w-full bg-slate-700/30 rounded-full h-2.5 backdrop-blur-sm">
+                                            <div className="bg-emerald-500 h-2.5 rounded-full transition-all duration-700 shadow-glow-sm" style={{ width: `${stats.submissionProgress}%` }}></div>
                                         </div>
                                     </div>
 
                                     {/* Export Buttons - Only visible to Admin */}
                                     {isAdmin && (
-                                        <div className="mt-8 pt-6 border-t border-slate-800 space-y-3 animate-fade-in">
+                                        <div className="mt-8 pt-6 border-t border-white/10 space-y-3 animate-fade-in">
                                             <div className="text-xs font-bold text-indigo-400 mb-2 uppercase tracking-wider">管理員功能</div>
-                                            <button onClick={handleSyncClick} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-lg text-sm font-medium transition-colors border border-indigo-500 shadow-lg shadow-indigo-500/20">
+                                            <button onClick={handleSyncClick} className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-lg text-sm font-bold transition-all shadow-glow border border-indigo-500/50 hover:scale-[1.02]">
                                                 <Icon name="UploadCloud" size={16} /> ☁️ 同步至 Google Sheet
                                             </button>
-                                            <button onClick={copyForGoogleSheets} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700">
+                                            <button onClick={copyForGoogleSheets} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 py-2.5 rounded-lg text-sm font-bold transition-colors border border-white/10">
                                                 <Icon name="Copy" size={16} /> 📋 複製資料 (Excel/Sheet)
                                             </button>
-                                            <button onClick={downloadCSV} className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-lg text-sm font-medium transition-colors border border-slate-700">
+                                            <button onClick={downloadCSV} className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 text-slate-300 py-2.5 rounded-lg text-sm font-bold transition-colors border border-white/10">
                                                 <Icon name="Download" size={16} /> 📥 下載 CSV 備份
                                             </button>
                                         </div>
                                     )}
                                 </div>
 
-                                <nav className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 overflow-hidden hidden md:block">
-                                    <div className="p-5 bg-slate-800/50 border-b border-slate-800">
+                                <nav className="glass-panel rounded-2xl overflow-hidden hidden md:block">
+                                    <div className="p-5 bg-white/5 border-b border-white/10">
                                         <h3 className="font-bold text-slate-200 text-lg flex items-center gap-2">
                                             <Icon name="ListTodo" size={20} /> 階段導航
                                         </h3>
                                     </div>
-                                    <div className="divide-y divide-slate-800">
-                                        {STAGES.map((stage) => {
+                                    <div className="divide-y divide-white/5">
+                                        <div className="bg-slate-900/50 px-5 py-2 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-white/5">📋 官方試務期程</div>
+                                        {STAGES.filter(s => s.category === 'official').map((stage) => {
                                             const isActive = activeStage === stage.id;
-                                            const stageTasks = tasks.filter(t => t.stage === stage.id);
-                                            const isAllDone = stageTasks.every(t => t.completed);
                                             
                                             return (
-                                                <button key={stage.id} onClick={() => { setActiveStage(stage.id); setIsMobileMenuOpen(false); }} className={`w-full text-left p-5 flex items-center justify-between transition-all hover:bg-slate-800 ${isActive ? 'bg-blue-900/20 border-l-4 border-blue-500' : 'border-l-4 border-transparent'}`}>
+                                                <button key={stage.id} onClick={() => { setActiveStage(stage.id); setIsMobileMenuOpen(false); }} className={`w-full text-left p-5 flex items-center justify-between transition-all hover:bg-white/5 ${isActive ? 'bg-blue-500/10 border-l-4 border-blue-500' : 'border-l-4 border-transparent'}`}>
                                                     <div>
                                                         <div className={`text-base md:text-lg font-bold ${isActive ? 'text-blue-400' : 'text-slate-300'}`}>
                                                             {stage.title}
                                                         </div>
-                                                        <div className="text-sm text-slate-500 mt-1.5 flex items-center gap-2">
+                                                        <div className="text-sm text-slate-500 font-bold mt-1.5 flex items-center gap-2">
                                                             <span>{stage.period}</span>
-                                                            {isAllDone && <span className="text-emerald-500 flex items-center font-medium"><Icon name="CheckCircle2" size={12} className="mr-1"/> 完成</span>}
                                                         </div>
                                                     </div>
                                                     {isActive && <Icon name="ChevronRight" size={20} className="text-blue-500" />}
+                                                </button>
+                                            );
+                                        })}
+                                        
+                                        <div className="bg-slate-900/50 px-5 py-2 text-xs font-bold text-indigo-400 uppercase tracking-wider border-y border-white/5 mt-2">🏥 院內 UGY 特訓</div>
+                                        {STAGES.filter(s => s.category === 'internal').map((stage) => {
+                                            const isActive = activeStage === stage.id;
+                                            
+                                            return (
+                                                <button key={stage.id} onClick={() => { setActiveStage(stage.id); setIsMobileMenuOpen(false); }} className={`w-full text-left p-5 flex items-center justify-between transition-all hover:bg-white/5 ${isActive ? 'bg-indigo-500/10 border-l-4 border-indigo-500' : 'border-l-4 border-transparent'}`}>
+                                                    <div>
+                                                        <div className={`text-base md:text-lg font-bold ${isActive ? 'text-indigo-400' : 'text-slate-300'}`}>
+                                                            {stage.title}
+                                                        </div>
+                                                        <div className="text-sm text-slate-500 font-bold mt-1.5 flex items-center gap-2">
+                                                            <span>{stage.period}</span>
+                                                        </div>
+                                                    </div>
+                                                    {isActive && <Icon name="ChevronRight" size={20} className="text-indigo-500" />}
                                                 </button>
                                             );
                                         })}
@@ -799,38 +864,49 @@
 
                             {/* Task List */}
                             <div className="lg:col-span-9 flex flex-col gap-6">
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-5 md:p-6 rounded-2xl shadow-lg border border-slate-800">
+                                <div className="glass-panel p-5 md:p-6 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <div className="w-full md:w-auto">
                                         {/* Mobile Stage Selector (Only Visible on Mobile) */}
                                         <div className="md:hidden w-full mb-4">
                                             <label className="text-xs text-slate-400 uppercase font-bold mb-1.5 block">切換階段</label>
-                                            <select 
-                                                value={activeStage} 
-                                                onChange={(e) => setActiveStage(Number(e.target.value))}
-                                                className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3 outline-none focus:border-blue-500 dark-select"
-                                            >
-                                                {STAGES.map(stage => (
-                                                    <option key={stage.id} value={stage.id}>{stage.title}</option>
-                                                ))}
-                                            </select>
+                                            <div className="relative">
+                                                <select 
+                                                    value={activeStage} 
+                                                    onChange={(e) => setActiveStage(Number(e.target.value))}
+                                                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg p-3 outline-none focus:border-blue-500 dark-select appearance-none shadow-inner font-bold"
+                                                >
+                                                    <optgroup label="📋 官方試務期程">
+                                                        {STAGES.filter(s => s.category === 'official').map(stage => (
+                                                            <option key={stage.id} value={stage.id}>{stage.title}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                    <optgroup label="🏥 院內 UGY 特訓">
+                                                        {STAGES.filter(s => s.category === 'internal').map(stage => (
+                                                            <option key={stage.id} value={stage.id}>{stage.title}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                </select>
+                                            </div>
                                         </div>
 
-                                        <h2 className="text-2xl md:text-3xl font-bold text-white hidden md:block">{STAGES[activeStage - 1].title}</h2>
-                                        <p className="text-base md:text-lg text-slate-400 mt-2 flex items-center gap-2 flex-wrap">
-                                            檢核表回傳截止日：
-                                            <span className="font-mono font-bold text-rose-300 bg-rose-900/30 border border-rose-800 px-3 py-1 rounded">
-                                                {STAGES[activeStage - 1].returnDate}
+                                        <h2 className={`text-2xl md:text-3xl font-bold hidden md:block drop-shadow-md ${STAGES.find(s => s.id === activeStage)?.category === 'internal' ? 'text-indigo-400' : 'text-white'}`}>
+                                            {STAGES.find(s => s.id === activeStage)?.title}
+                                        </h2>
+                                        <p className="text-base md:text-lg text-slate-300 font-bold mt-2 flex items-center gap-2 flex-wrap">
+                                            {activeStage === 99 ? '院內自訂行程' : '檢核表回傳截止日：'}
+                                            <span className={`font-mono font-bold px-3 py-1 rounded backdrop-blur-sm ${activeStage === 99 ? 'text-indigo-300 bg-indigo-500/20 border border-indigo-500/30' : 'text-rose-300 bg-rose-500/20 border border-rose-500/30'}`}>
+                                                {STAGES.find(s => s.id === activeStage)?.returnDate}
                                             </span>
                                         </p>
                                     </div>
-                                    <div className="flex bg-slate-800 p-1.5 rounded-xl self-end md:self-center">
-                                        <button onClick={() => setFilter('all')} className={`px-5 py-2.5 text-base font-medium rounded-lg transition ${filter === 'all' ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}>全部</button>
-                                        <button onClick={() => setFilter('pending')} className={`px-5 py-2.5 text-base font-medium rounded-lg transition ${filter === 'pending' ? 'bg-slate-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'}`}>未完成</button>
+                                    <div className="flex bg-black/20 p-1.5 rounded-xl self-end md:self-center backdrop-blur-sm border border-white/5">
+                                        <button onClick={() => setFilter('all')} className={`px-5 py-2.5 text-base font-bold rounded-lg transition-all ${filter === 'all' ? 'bg-white/10 text-white shadow-sm border border-white/10' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}>全部</button>
+                                        <button onClick={() => setFilter('pending')} className={`px-5 py-2.5 text-base font-bold rounded-lg transition-all ${filter === 'pending' ? 'bg-white/10 text-white shadow-sm border border-white/10' : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'}`}>未完成</button>
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 overflow-hidden">
-                                    <div className="hidden md:grid grid-cols-12 gap-4 bg-slate-800/50 border-b border-slate-800 p-4 text-sm font-bold text-slate-400 uppercase tracking-wider">
+                                <div className="glass-panel rounded-2xl overflow-hidden">
+                                    <div className="hidden md:grid grid-cols-12 gap-4 bg-white/5 border-b border-white/10 p-4 text-sm font-bold text-slate-400 uppercase tracking-wider backdrop-blur-md">
                                         <div className="col-span-1 text-center">狀態</div>
                                         <div className="col-span-1">項次</div>
                                         <div className="col-span-5">工作項目</div>
@@ -839,42 +915,45 @@
                                         <div className="col-span-1 text-center">進度</div>
                                     </div>
 
-                                    <div className="divide-y divide-slate-800">
+                                    <div className="divide-y divide-white/5">
                                         {tasks.filter(t => t.stage === activeStage).filter(t => filter === 'all' || !t.completed).map(task => {
                                             const status = getStatusLabel(task);
                                             const lightClass = getTrafficLight(task);
+                                            const isInternal = task.stage === 99;
                                             
                                             return (
-                                                <div key={task.id} className="p-5 md:p-4 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center transition-colors hover:bg-slate-800/30 border-l-4 border-slate-700 relative">
+                                                <div key={task.id} className={`p-5 md:p-4 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center transition-colors hover:bg-white/5 border-l-4 relative ${isInternal ? 'border-indigo-500' : 'border-slate-600'}`}>
                                                     
                                                     {/* Traffic Light Visual - Desktop Column 1 */}
                                                     <div className="hidden md:flex md:col-span-1 justify-center items-center">
-                                                        <div className={`w-4 h-4 rounded-full ${lightClass}`} title={status.text}></div>
+                                                        <div className={`w-3 h-3 rounded-full ${lightClass}`} title={status.text}></div>
                                                     </div>
 
                                                     {/* Compact Mobile Layout */}
                                                     <div className="md:hidden relative pl-3 w-full">
                                                         {/* Color Strip based on status */}
-                                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l ${lightClass.replace('w-4 h-4 rounded-full', '').replace('shadow-[0_0_8px_rgba(16,185,129,0.6)]', '')}`}></div>
+                                                        <div className={`absolute left-0 top-0 bottom-0 w-1 rounded-l ${lightClass.replace('w-3 h-3 rounded-full', '').replace('shadow-[0_0_10px_rgba(16,185,129,0.5)]', '')}`}></div>
                                                         
                                                         <div className="flex justify-between items-start gap-3">
                                                             <div className="flex-1">
                                                                  <div className="flex items-start gap-3">
                                                                     <button onClick={() => toggleTask(task.id)} className={`mt-0.5 shrink-0 ${isAdmin ? 'text-slate-500 hover:text-blue-400' : 'text-slate-600'}`}>
-                                                                        {task.completed ? <Icon name="CheckCircle2" className="text-emerald-500" size={26}/> : <Icon name="CheckCircle2" size={26}/>}
+                                                                        {task.completed ? <Icon name="CheckCircle2" className="text-emerald-400 drop-shadow-md" size={26}/> : <Icon name="CheckCircle2" size={26}/>}
                                                                     </button>
                                                                     <div className="w-full">
-                                                                         <div className="flex justify-between items-start w-full">
-                                                                             <h4 className={`text-lg font-bold leading-snug mr-2 ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                                                                         <div className="flex justify-between items-start w-full mb-1">
+                                                                             <h4 className={`text-lg font-bold leading-snug mr-2 ${task.completed ? 'line-through text-slate-500' : 'text-slate-100'}`}>
                                                                                 {task.taskName}
                                                                              </h4>
+                                                                             {/* Status Badge moved to right of title */}
                                                                              <span className={`shrink-0 inline-block px-2 py-0.5 rounded text-xs font-bold border ${status.class}`}>{status.text}</span>
                                                                          </div>
                                                                          
-                                                                         <div className="flex flex-wrap items-center gap-2 mt-1.5 text-sm text-slate-400">
-                                                                             <span className="bg-slate-800 px-1.5 py-0.5 rounded text-xs font-mono border border-slate-700">{task.seq}</span>
-                                                                             <span className="flex items-center gap-1 font-mono text-xs bg-slate-800/50 px-1.5 py-0.5 rounded"><Icon name="Calendar" size={12}/> {task.deadlineDisplay}</span>
-                                                                             {task.type === 'submission' && <span className="text-indigo-400 flex items-center gap-1 text-xs"><Icon name="FileInput" size={12}/> 需回傳</span>}
+                                                                         <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-slate-300 font-bold">
+                                                                             <span className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono border border-white/10">{task.seq}</span>
+                                                                             <span className="flex items-center gap-1 font-mono text-xs bg-black/20 px-2 py-1 rounded border border-white/5 text-slate-300"><Icon name="Calendar" size={12}/> {task.deadlineDisplay}</span>
+                                                                             {task.type === 'submission' && <span className="text-indigo-300 bg-indigo-500/20 px-1.5 py-0.5 rounded border border-indigo-500/30 flex items-center gap-1 text-xs"><Icon name="FileInput" size={12}/> 需回傳</span>}
+                                                                             {task.type === 'training' && <span className="text-purple-300 bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/30 flex items-center gap-1 text-xs"><Icon name="GraduationCap" size={12}/> 訓練</span>}
                                                                          </div>
                                                                     </div>
                                                                  </div>
@@ -882,20 +961,20 @@
                                                         </div>
                                                         
                                                         {/* Mobile Notes Section */}
-                                                        <div className="mt-2 ml-10 space-y-2">
+                                                        <div className="mt-3 ml-10 space-y-2">
                                                             {task.note && !task.completed && (
-                                                                <div className="text-sm text-amber-400 flex items-center gap-1.5 bg-amber-900/10 p-1.5 rounded border border-amber-900/30">
-                                                                    <Icon name="AlertCircle" size={14}/> {task.note}
+                                                                <div className="text-sm text-amber-300 font-bold flex items-center gap-2 bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                                                                    <Icon name="AlertCircle" size={14} className="shrink-0"/> {task.note}
                                                                 </div>
                                                             )}
                                                             
                                                             {/* Mobile User Note */}
                                                             {isAdmin && (
-                                                                <div className="flex items-center gap-2 mt-1">
+                                                                <div className="flex items-center gap-2 mt-1 bg-black/20 p-1.5 rounded border border-white/5">
                                                                     <Icon name="Edit" size={12} className="text-slate-500"/>
                                                                     <input 
                                                                         type="text" 
-                                                                        className="bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none text-sm text-blue-200 w-full placeholder-slate-600 py-1"
+                                                                        className="bg-transparent border-0 focus:ring-0 outline-none text-sm text-blue-200 w-full placeholder-slate-600 py-0 font-bold"
                                                                         placeholder="新增執行筆記..."
                                                                         value={task.userNote || ''}
                                                                         onChange={(e) => updateUserNote(task.id, e.target.value)}
@@ -903,40 +982,40 @@
                                                                 </div>
                                                             )}
                                                             {!isAdmin && task.userNote && (
-                                                                <p className="text-sm text-blue-300 italic border-l-2 border-slate-700 pl-2 py-1">{task.userNote}</p>
+                                                                <p className="text-sm text-blue-300 italic font-bold border-l-2 border-blue-500/30 pl-2 py-1">{task.userNote}</p>
                                                             )}
                                                         </div>
                                                     </div>
 
                                                     {/* Desktop: Seq */}
-                                                    <div className="hidden md:block md:col-span-1 text-slate-500 font-mono text-base">{task.seq}</div>
+                                                    <div className="hidden md:block md:col-span-1 text-slate-400 font-bold font-mono text-base">{task.seq}</div>
 
                                                     {/* Desktop: Name & Note */}
                                                     <div className="hidden md:block md:col-span-5">
                                                         <div className="flex items-center gap-3">
                                                             <button onClick={() => toggleTask(task.id)} className={`shrink-0 ${isAdmin ? 'text-slate-500 hover:text-blue-400 cursor-pointer' : 'text-slate-600 cursor-not-allowed opacity-50'}`}>
-                                                                {task.completed ? <Icon name="CheckCircle2" className="text-emerald-500" size={24}/> : <Icon name="CheckCircle2" size={24}/>}
+                                                                {task.completed ? <Icon name="CheckCircle2" className="text-emerald-400 drop-shadow-md" size={24}/> : <Icon name="CheckCircle2" size={24}/>}
                                                             </button>
                                                             <div className={`text-lg font-bold ${task.completed ? 'line-through text-slate-600' : 'text-slate-200'}`}>{task.taskName}</div>
                                                         </div>
-                                                        {task.note && !task.completed && <div className="text-sm text-amber-400 mt-1 flex items-center gap-1.5 ml-9"><Icon name="AlertCircle" size={14}/> {task.note}</div>}
+                                                        {task.note && !task.completed && <div className="text-sm font-bold text-amber-300 mt-1 flex items-center gap-1.5 ml-9"><Icon name="AlertCircle" size={14}/> {task.note}</div>}
                                                         
                                                         {/* User Note Input (Desktop) */}
                                                         {(isAdmin || task.userNote) && (
                                                             <div className="mt-2 ml-9">
                                                                 {isAdmin ? (
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Icon name="Edit" size={14} className="text-slate-500"/>
+                                                                    <div className="flex items-center gap-2 group/input">
+                                                                        <Icon name="Edit" size={14} className="text-slate-600 group-hover/input:text-slate-400 transition-colors"/>
                                                                         <input 
                                                                             type="text" 
-                                                                            className="bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none text-sm text-blue-200 w-full placeholder-slate-600"
+                                                                            className="bg-transparent border-b border-white/10 focus:border-blue-500 outline-none text-sm text-blue-200 font-bold w-full placeholder-slate-700 hover:border-white/20 transition-colors"
                                                                             placeholder="新增執行筆記..."
                                                                             value={task.userNote || ''}
                                                                             onChange={(e) => updateUserNote(task.id, e.target.value)}
                                                                         />
                                                                     </div>
                                                                 ) : (
-                                                                    <p className="text-sm text-blue-300 italic border-l-2 border-slate-700 pl-2">{task.userNote}</p>
+                                                                    <p className="text-sm font-bold text-blue-300 italic border-l-2 border-white/10 pl-2">{task.userNote}</p>
                                                                 )}
                                                             </div>
                                                         )}
@@ -944,13 +1023,14 @@
                                                     
                                                     {/* Desktop Type */}
                                                     <div className="hidden md:flex md:col-span-2 pl-0 flex-wrap gap-2 mb-2 md:mb-0">
-                                                        {task.type === 'submission' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-900/40 text-indigo-300 text-sm font-medium border border-indigo-800/50"><Icon name="FileInput" size={14}/> 繳交學會</span>}
-                                                        {task.type === 'milestone' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-900/40 text-purple-300 text-sm font-medium border border-purple-800/50"><Icon name="Flag" size={14}/> 重要時程</span>}
-                                                        {task.type === 'task' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 text-slate-400 text-sm font-medium border border-slate-700"><Icon name="Clock" size={14}/> 一般作業</span>}
+                                                        {task.type === 'submission' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-sm font-bold border border-indigo-500/30"><Icon name="FileInput" size={14}/> 繳交學會</span>}
+                                                        {task.type === 'milestone' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-500/20 text-purple-300 text-sm font-bold border border-purple-500/30"><Icon name="Flag" size={14}/> 重要時程</span>}
+                                                        {task.type === 'task' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-700/50 text-slate-300 text-sm font-bold border border-slate-600/50"><Icon name="Clock" size={14}/> 一般作業</span>}
+                                                        {task.type === 'training' && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600/20 text-indigo-300 text-sm font-bold border border-indigo-500/30"><Icon name="GraduationCap" size={14}/> 院內訓練</span>}
                                                     </div>
 
                                                     {/* Desktop Deadline */}
-                                                    <div className="hidden md:flex md:col-span-2 text-base font-mono text-slate-400 items-center gap-2 mb-2 md:mb-0">
+                                                    <div className="hidden md:flex md:col-span-2 text-base font-bold font-mono text-slate-300 items-center gap-2 mb-2 md:mb-0">
                                                         <Icon name="Calendar" size={16}/> {task.deadlineDisplay}
                                                     </div>
 
@@ -961,21 +1041,21 @@
                                                 </div>
                                             );
                                         })}
-                                        {tasks.filter(t => t.stage === activeStage).length === 0 && <div className="p-16 text-center text-slate-500"><p className="text-lg">此階段尚無任務資料</p></div>}
+                                        {tasks.filter(t => t.stage === activeStage).length === 0 && <div className="p-16 text-center text-slate-500 font-bold"><p className="text-lg">此階段尚無任務資料</p></div>}
                                     </div>
                                 </div>
                                 
-                                <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5 text-sm md:text-base text-slate-400 flex items-start gap-3 shadow-sm">
+                                <div className="glass-panel border-white/10 rounded-xl p-5 text-sm md:text-base text-slate-400 font-bold flex items-start gap-3 shadow-sm">
                                     <Icon name="Cloud" size={20} className="mt-0.5 shrink-0 text-indigo-400" />
-                                    <p className="leading-relaxed"><span className="font-bold text-slate-200">本地存檔中：</span> 您的進度會自動儲存於此瀏覽器中。標示 <span className="inline-flex items-center gap-1 mx-1.5 px-1.5 py-0.5 rounded bg-indigo-900/50 text-indigo-300 font-medium border border-indigo-700/50 align-middle text-xs"><Icon name="FileInput" size={12}/> 繳交學會</span> 之項目為學會檢核重點，請優先處理。</p>
+                                    <p className="leading-relaxed"><span className="font-bold text-slate-200">本地存檔中：</span> 您的進度會自動儲存於此瀏覽器中。標示 <span className="inline-flex items-center gap-1 mx-1.5 px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 align-middle text-xs"><Icon name="FileInput" size={12}/> 繳交學會</span> 之項目為學會檢核重點，請優先處理。</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <footer className="w-full max-w-7xl mx-auto px-4 md:px-6 py-6 border-t border-slate-800 flex justify-end text-right">
-                        <div className="text-slate-500 text-sm font-medium">
+                    <footer className="w-full max-w-7xl mx-auto px-4 md:px-6 py-6 border-t border-white/5 flex justify-end text-right">
+                        <div className="text-slate-500 text-sm font-bold">
                             奇美醫院 臨床技能中心 製
                         </div>
                     </footer>
