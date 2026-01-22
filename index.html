@@ -183,8 +183,9 @@
         );
 
         // --- Data ---
-        // Mocking current date to show effect. Change to new Date() for production
-        const MOCK_CURRENT_DATE = new Date('2026-01-20'); 
+        // UPDATED: Set to 2026/01/22 to match the scenario
+        const MOCK_CURRENT_DATE = new Date('2026-01-22'); 
+        
         const STAGES = [
             { id: 1, title: '第一階段：籌備與報名', period: '1月', returnDate: '115.1.28', category: 'official' },
             { id: 2, title: '第二階段：試務安排', period: '2-4月', returnDate: '115.4.10', category: 'official' },
@@ -366,6 +367,22 @@
                 </div>
             );
         };
+        
+        // Helper to get Monday and Sunday of the week for a given date
+        const getWeekRange = (date) => {
+            const d = new Date(date);
+            const day = d.getDay(); // 0 (Sun) to 6 (Sat)
+            const diffToMon = day === 0 ? -6 : 1 - day; // Adjust so Mon is start
+            const monday = new Date(d);
+            monday.setDate(d.getDate() + diffToMon);
+            monday.setHours(0,0,0,0);
+            
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            sunday.setHours(23,59,59,999);
+            
+            return { start: monday, end: sunday };
+        };
 
         const App = () => {
             const [currentDate] = useState(MOCK_CURRENT_DATE);
@@ -423,6 +440,7 @@
                     setIsLoadingCloud(false);
                     if (response.status === 'success') {
                         const cloudData = response.data;
+                        
                         setTasks(prevTasks => {
                             const updated = prevTasks.map(t => {
                                 if (cloudData.hasOwnProperty(t.taskName)) {
@@ -434,6 +452,7 @@
                                 }
                                 return t; 
                             });
+                            
                             const toSave = updated.map(t => ({ id: t.id, completed: t.completed, userNote: t.userNote }));
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
                             return updated;
@@ -561,25 +580,37 @@
 
             // Calc
             const examDate = new Date('2026-04-24');
+            // UPDATED: Fixed top countdown to always point to Exam Date (4/24)
             const daysUntilExam = Math.ceil((examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+            
             const stats = useMemo(() => {
                 const total = tasks.length;
                 const completed = tasks.filter(t => t.completed).length;
                 const submissionTotal = tasks.filter(t => t.type === 'submission').length;
                 const submissionDone = tasks.filter(t => t.type === 'submission' && t.completed).length;
+                
+                const { start: weekStart, end: weekEnd } = getWeekRange(currentDate);
+
+                // UPDATED Logic for Active Tasks:
+                // Filter tasks that are NOT completed AND deadline falls within THIS WEEK (Mon-Sun) OR Overdue
+                // The 'countdown' for these cards will be 'Days until Deadline'
                 const activeTasks = tasks.filter(t => {
                     if (t.completed) return false;
-                    const start = new Date(t.dateStart);
+                    
                     const end = new Date(t.dateEnd);
-                    const isOngoing = currentDate >= start && currentDate <= end;
-                    const diffEnd = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
-                    return isOngoing || (diffEnd >= 0 && diffEnd <= 7);
-                });
+                    // Include if due date is <= week end (covers this week and overdue)
+                    // AND end date is not super old? No, overdue is important.
+                    return end <= weekEnd;
+                }).sort((a, b) => new Date(a.dateEnd) - new Date(b.dateEnd));
+
+                // UPDATED Logic for Upcoming Tasks:
+                // Tasks starting AFTER this week (Monday of next week onwards)
                 const upcomingTasks = tasks.filter(t => {
                     if (t.completed) return false;
                     const start = new Date(t.dateStart);
-                    return start > currentDate;
+                    return start > weekEnd;
                 }).sort((a, b) => new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()).slice(0, 3);
+                
                 return { total, completed, progress: Math.round((completed / total) * 100), submissionProgress: Math.round((submissionDone / submissionTotal) * 100), activeTasks, upcomingTasks };
             }, [tasks, currentDate]);
 
@@ -623,7 +654,9 @@
                         {task.type === 'submission' && (
                             <div className="text-xs font-bold text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded mb-0 md:mb-1 inline-block backdrop-blur-sm">需回傳</div>
                         )}
-                        <div className={`text-lg md:text-xl font-bold whitespace-nowrap ${daysLeft <= 3 ? 'text-rose-400' : 'text-blue-400'} drop-shadow-sm`}>剩 {daysLeft} 天</div>
+                        <div className={`text-lg md:text-xl font-bold whitespace-nowrap ${daysLeft <= 3 ? 'text-rose-400' : 'text-blue-400'} drop-shadow-sm`}>
+                             {daysLeft < 0 ? `逾期 ${Math.abs(daysLeft)} 天` : `剩 ${daysLeft} 天`}
+                        </div>
                     </div>
                 </div>
             );
@@ -679,7 +712,9 @@
                                 </div>
                                 <div className="flex items-center gap-4 justify-between w-full md:justify-end">
                                     <div className="text-right">
-                                        <p className="text-xs text-slate-300 font-bold mb-1">距離考試 (4/24)</p>
+                                        <p className="text-xs text-slate-300 font-bold mb-1">
+                                            距離 正式國考 (4/24)
+                                        </p>
                                         <p className="text-4xl md:text-5xl font-mono font-bold text-yellow-400 leading-none drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]">
                                             {daysUntilExam} <span className="text-lg text-slate-400 font-normal">天</span>
                                         </p>
@@ -719,7 +754,8 @@
                                     ) : (
                                         stats.activeTasks.map(task => {
                                             const end = new Date(task.dateEnd);
-                                            const daysLeft = Math.ceil((end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
+                                            // UPDATED: Countdown from today to DEADLINE
+                                            const daysLeft = Math.ceil((end.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
                                             return <ActionCard key={task.id} task={task} daysLeft={daysLeft} onToggle={toggleTask} />;
                                         })
                                     )}
@@ -737,7 +773,7 @@
                                     {stats.upcomingTasks.length === 0 ? <p className="text-base text-slate-500">無後續任務</p> : 
                                         stats.upcomingTasks.map(task => {
                                             const start = new Date(task.dateStart);
-                                            const daysToStart = Math.ceil((start.getTime() - currentDate.getTime()) / (1000 * 3600 * 24));
+                                            const daysToStart = Math.ceil((start.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
                                             return (
                                                 <div key={task.id} className="flex items-center gap-5 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 transition-all">
                                                     <div className="w-14 text-center shrink-0 flex flex-col justify-center bg-black/20 rounded-lg py-2 border border-white/5">
