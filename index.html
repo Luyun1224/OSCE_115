@@ -183,15 +183,15 @@
         );
 
         // --- Data ---
-        // UPDATED: Set to 2026/01/22 to match the scenario
-        const MOCK_CURRENT_DATE = new Date('2026-01-22'); 
+        // 移除 Mock 日期，改為系統動態日期
+        // 如果需要測試特定日期，可以取消註解下一行並修改日期
+        // const DEBUG_DATE = new Date('2026-01-28'); 
         
         const STAGES = [
             { id: 1, title: '第一階段：籌備與報名', period: '1月', returnDate: '115.1.28', category: 'official' },
             { id: 2, title: '第二階段：試務安排', period: '2-4月', returnDate: '115.4.10', category: 'official' },
             { id: 3, title: '第三階段：考場設置與執行', period: '4-5月', returnDate: '115.5.6', category: 'official' },
             { id: 4, title: '第四階段：成績結算與檢討', period: '5-6月', returnDate: '115.6.18', category: 'official' },
-            // 新增: 院內特訓階段 (ID 99)
             { id: 99, title: '🏥 院內 UGY 國考特訓', period: '1-4月', returnDate: '內部行程', category: 'internal' },
         ];
         
@@ -384,8 +384,33 @@
             return { start: monday, end: sunday };
         };
 
+        // Helper to calculate days difference properly (ignoring time)
+        const getDaysDiff = (targetDate, baseDate) => {
+            const t = new Date(targetDate);
+            t.setHours(0, 0, 0, 0);
+            const b = new Date(baseDate);
+            b.setHours(0, 0, 0, 0);
+            const diffTime = t.getTime() - b.getTime();
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        };
+
         const App = () => {
-            const [currentDate] = useState(MOCK_CURRENT_DATE);
+            // UPDATED: Now uses system Date by default
+            const [currentDate, setCurrentDate] = useState(() => {
+                if (typeof DEBUG_DATE !== 'undefined') return DEBUG_DATE;
+                return new Date();
+            });
+
+            useEffect(() => {
+                // Optional: Update date every minute to keep it fresh
+                const timer = setInterval(() => {
+                    if (typeof DEBUG_DATE === 'undefined') {
+                        setCurrentDate(new Date());
+                    }
+                }, 60000);
+                return () => clearInterval(timer);
+            }, []);
+
             const [activeStage, setActiveStage] = useState(1);
             const [filter, setFilter] = useState('all');
             const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -580,8 +605,8 @@
 
             // Calc
             const examDate = new Date('2026-04-24');
-            // UPDATED: Fixed top countdown to always point to Exam Date (4/24)
-            const daysUntilExam = Math.ceil((examDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+            // UPDATED: Use getDaysDiff helper for cleaner day calculation
+            const daysUntilExam = getDaysDiff(examDate, currentDate);
             
             const stats = useMemo(() => {
                 const total = tasks.length;
@@ -593,18 +618,16 @@
 
                 // UPDATED Logic for Active Tasks:
                 // Filter tasks that are NOT completed AND deadline falls within THIS WEEK (Mon-Sun) OR Overdue
-                // The 'countdown' for these cards will be 'Days until Deadline'
                 const activeTasks = tasks.filter(t => {
                     if (t.completed) return false;
                     
                     const end = new Date(t.dateEnd);
                     // Include if due date is <= week end (covers this week and overdue)
-                    // AND end date is not super old? No, overdue is important.
                     return end <= weekEnd;
                 }).sort((a, b) => new Date(a.dateEnd) - new Date(b.dateEnd));
 
                 // UPDATED Logic for Upcoming Tasks:
-                // Tasks starting AFTER this week (Monday of next week onwards)
+                // Tasks starting AFTER this week
                 const upcomingTasks = tasks.filter(t => {
                     if (t.completed) return false;
                     const start = new Date(t.dateStart);
@@ -616,19 +639,24 @@
 
             const getTrafficLight = (task) => {
                 if (task.completed) return 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'; 
-                const end = new Date(task.dateEnd);
-                const daysUntilDeadline = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
-                if (currentDate > end) return 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse'; 
+                
+                // UPDATED: Use days diff helper
+                const daysUntilDeadline = getDaysDiff(task.dateEnd, currentDate);
+                
+                if (daysUntilDeadline < 0) return 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)] animate-pulse'; 
                 if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) return 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]'; 
                 return 'bg-slate-600/50'; 
             };
 
             const getStatusLabel = (task) => {
                 if (task.completed) return { text: '已完成', class: 'text-emerald-300 bg-emerald-500/20 border-emerald-500/30' };
-                const end = new Date(task.dateEnd);
-                const daysUntilDeadline = (end.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
-                if (currentDate > end) return { text: '已逾期', class: 'text-red-300 bg-red-500/20 border-red-500/30' };
-                if (daysUntilDeadline >= 0 && daysUntilDeadline <= 7) return { text: '即將到期', class: 'text-amber-300 bg-amber-500/20 border-amber-500/30' };
+                
+                // UPDATED: Use days diff helper
+                const daysUntilDeadline = getDaysDiff(task.dateEnd, currentDate);
+                
+                if (daysUntilDeadline < 0) return { text: '已逾期', class: 'text-red-300 bg-red-500/20 border-red-500/30' };
+                if (daysUntilDeadline === 0) return { text: '今天到期', class: 'text-amber-300 bg-amber-500/20 border-amber-500/30' };
+                if (daysUntilDeadline > 0 && daysUntilDeadline <= 7) return { text: '即將到期', class: 'text-amber-300 bg-amber-500/20 border-amber-500/30' };
                 return { text: '待辦中', class: 'text-slate-400 bg-slate-700/50 border-slate-600/30' };
             };
 
@@ -655,7 +683,7 @@
                             <div className="text-xs font-bold text-rose-300 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded mb-0 md:mb-1 inline-block backdrop-blur-sm">需回傳</div>
                         )}
                         <div className={`text-lg md:text-xl font-bold whitespace-nowrap ${daysLeft <= 3 ? 'text-rose-400' : 'text-blue-400'} drop-shadow-sm`}>
-                             {daysLeft < 0 ? `逾期 ${Math.abs(daysLeft)} 天` : `剩 ${daysLeft} 天`}
+                             {daysLeft < 0 ? `逾期 ${Math.abs(daysLeft)} 天` : daysLeft === 0 ? "今天到期" : `剩 ${daysLeft} 天`}
                         </div>
                     </div>
                 </div>
@@ -753,9 +781,8 @@
                                         <div className="text-base text-slate-300 font-bold italic py-8 text-center bg-white/5 rounded-xl border border-dashed border-white/10">目前無緊急待辦事項</div>
                                     ) : (
                                         stats.activeTasks.map(task => {
-                                            const end = new Date(task.dateEnd);
-                                            // UPDATED: Countdown from today to DEADLINE
-                                            const daysLeft = Math.ceil((end.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+                                            // UPDATED: Use helper to calculate day difference correctly
+                                            const daysLeft = getDaysDiff(task.dateEnd, currentDate);
                                             return <ActionCard key={task.id} task={task} daysLeft={daysLeft} onToggle={toggleTask} />;
                                         })
                                     )}
@@ -772,8 +799,8 @@
                                 <div className="space-y-4 flex-1">
                                     {stats.upcomingTasks.length === 0 ? <p className="text-base text-slate-500">無後續任務</p> : 
                                         stats.upcomingTasks.map(task => {
-                                            const start = new Date(task.dateStart);
-                                            const daysToStart = Math.ceil((start.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
+                                            // UPDATED: Use helper
+                                            const daysToStart = getDaysDiff(task.dateStart, currentDate);
                                             return (
                                                 <div key={task.id} className="flex items-center gap-5 p-4 rounded-xl bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 transition-all">
                                                     <div className="w-14 text-center shrink-0 flex flex-col justify-center bg-black/20 rounded-lg py-2 border border-white/5">
